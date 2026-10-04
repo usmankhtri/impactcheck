@@ -2,6 +2,7 @@ import { parseGitDiff } from '../parser/diffParser';
 import { runAnalysis } from '../rules';
 import { generateChecklistFromFindings } from '../services/checklistGenerator';
 import { buildReportObject, generateMarkdownReport } from '../services/reportExporter';
+import { computeLineDiff, compareFileMaps } from '../utils/diffGenerator';
 import { EXAMPLES } from '../examples';
 
 let passed = 0;
@@ -378,6 +379,39 @@ new file mode 100644
     assert(largeSnap.totalFiles === 300, 'Large project parsed 300 files successfully');
     assert(largeAnalysis.findings !== undefined, 'Large project analysis completed without crash');
     assert(elapsed < 2000, `Large project processed in under 2s (actual: ${elapsed}ms)`);
+
+    // Scenario 14: Focused Before / After Single File Workflow
+    const sampleBefore = `import { Router } from 'express';
+export const router = Router();
+router.get('/api/v1/users', async (req, res) => {
+  return res.json({ users: [] });
+});`;
+    const sampleAfter = `import { Router } from 'express';
+export const router = Router();
+router.get('/api/v2/users', async (req, res) => {
+  return res.json({ users: [] });
+});`;
+    const singleFileDiff = computeLineDiff(sampleBefore, sampleAfter);
+    assert(singleFileDiff.additions === 1, 'Before/After single file detected 1 addition');
+    assert(singleFileDiff.deletions === 1, 'Before/After single file detected 1 deletion');
+    assert(singleFileDiff.hunks.length > 0, 'Before/After single file produced valid hunks');
+
+    const sampleFileCmp = compareFileMaps(
+      new Map([['src/api/users.ts', sampleBefore]]),
+      new Map([['src/api/users.ts', sampleAfter]])
+    );
+    assert(sampleFileCmp.totalFiles === 1, 'File maps comparison detected 1 modified file');
+    assert(sampleFileCmp.files[0].beforeContent === sampleBefore, 'Preserved beforeContent');
+    assert(sampleFileCmp.files[0].afterContent === sampleAfter, 'Preserved afterContent');
+    const beforeAfterAnalysis = runAnalysis(sampleFileCmp);
+    assert(beforeAfterAnalysis.findings.length > 0, 'Before/After workflow generates impact findings');
+
+    // Scenario 15: Identical Before and After produces 0 changes
+    const identicalCmp = compareFileMaps(
+      new Map([['src/file.ts', 'const a = 1;']]),
+      new Map([['src/file.ts', 'const a = 1;']])
+    );
+    assert(identicalCmp.totalFiles === 0, 'Identical Before and After produces 0 changed files');
 
     console.log('\n==================================================');
     console.log(`Results: ${passed} passed, ${failed} failed`);

@@ -45,6 +45,7 @@ import { FileDetailsPanel } from './FileDetailsPanel';
 import { HistoryModal } from './HistoryModal';
 import { SettingsModal } from './SettingsModal';
 import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
+import { BeforeAfterWorkspace } from './BeforeAfterWorkspace';
 import { getSettings, saveSettings } from '../../services/settingsService';
 import { EXAMPLES } from '../../examples';
 
@@ -249,7 +250,7 @@ export const DiffWorkbench: React.FC = () => {
           onToggleDiffMode={handleToggleDiffMode}
           onClear={handleClear}
           onOpenExportModal={() => setIsExportModalOpen(true)}
-          onOpenDiffInput={() => setIsImportModalOpen(true)}
+          onOpenDiffInput={() => setParsedDiff(null)}
           onOpenHistoryModal={() => setIsHistoryModalOpen(true)}
           onOpenSettingsModal={() => setIsSettingsModalOpen(true)}
           onOpenShortcutsModal={() => setIsShortcutsModalOpen(true)}
@@ -271,79 +272,7 @@ export const DiffWorkbench: React.FC = () => {
 
       {/* Main Workspace Area */}
       {!parsedDiff ? (
-        // Clean User-Friendly Empty State
-        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center max-w-3xl mx-auto overflow-y-auto">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 mb-4 shadow-xs">
-            <FileCode2 className="h-7 w-7 stroke-[1.5]" />
-          </div>
-
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-950 dark:text-white">
-            Understand what your code changes could affect.
-          </h2>
-
-          <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-2 max-w-lg leading-relaxed">
-            Import a project ZIP, select a local folder, compare before/after directory trees, or paste a Git diff to audit APIs, authentication, dependencies, and database schemas.
-          </p>
-
-          {/* Primary & Secondary Actions */}
-          <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
-            <button
-              onClick={() => setIsImportModalOpen(true)}
-              className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold text-white bg-neutral-900 dark:bg-neutral-100 dark:text-neutral-900 rounded-lg hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors shadow-xs cursor-pointer"
-            >
-              <Upload className="h-4 w-4" />
-              <span>Add your project or changes</span>
-            </button>
-
-            <button
-              onClick={() => {
-                const parsed = parseGitDiff(EXAMPLES[0].diff);
-                handleCompleteAnalysis(parsed, EXAMPLES[0].diff, EXAMPLES[0].name);
-              }}
-              className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold text-neutral-800 dark:text-neutral-200 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 border border-neutral-300 dark:border-neutral-700 rounded-lg transition-colors cursor-pointer"
-            >
-              <FolderOpen className="h-4 w-4" />
-              <span>Try an example</span>
-            </button>
-          </div>
-
-          {/* Flow Explanation */}
-          <div className="mt-8 flex items-center justify-center gap-2 sm:gap-4 text-xs font-medium text-neutral-500 max-w-lg">
-            <span>Project</span>
-            <ArrowRight className="h-3 w-3 text-neutral-400 shrink-0" />
-            <span>Change Detection</span>
-            <ArrowRight className="h-3 w-3 text-neutral-400 shrink-0" />
-            <span>Impact Analysis</span>
-            <ArrowRight className="h-3 w-3 text-neutral-400 shrink-0" />
-            <span>Review Checklist</span>
-          </div>
-
-          {/* Quick Scenario Cards */}
-          <div className="mt-8 w-full pt-6 border-t border-neutral-200 dark:border-neutral-800 text-left">
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-neutral-500 mb-3">
-              Developer Scenarios
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
-              {EXAMPLES.slice(0, 4).map((ex) => (
-                <button
-                  key={ex.id}
-                  onClick={() => {
-                    const parsed = parseGitDiff(ex.diff);
-                    handleCompleteAnalysis(parsed, ex.diff, ex.name);
-                  }}
-                  className="p-3 rounded-lg border border-neutral-200 dark:border-neutral-800 hover:border-neutral-400 dark:hover:border-neutral-600 bg-neutral-50/50 dark:bg-neutral-900/30 text-xs transition-colors cursor-pointer group text-left"
-                >
-                  <div className="font-semibold text-neutral-900 dark:text-neutral-100 group-hover:underline truncate">
-                    {ex.name}
-                  </div>
-                  <div className="text-[10px] text-neutral-500 truncate mt-1">
-                    {ex.category}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
+        <BeforeAfterWorkspace onAnalyze={handleCompleteAnalysis} />
       ) : (
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Mobile & Tablet View Selector Bar (visible below lg breakpoint) */}

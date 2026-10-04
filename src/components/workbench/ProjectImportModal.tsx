@@ -490,7 +490,7 @@ export const ProjectImportModal: React.FC<ProjectImportModalProps> = ({
                   >
                     <FolderOpen className="h-6 w-6 text-neutral-400 mx-auto mb-2" />
                     <div className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">
-                      1. Before (Base / Original)
+                      1. Before (Previous version)
                     </div>
                     <div className="text-[11px] text-neutral-500 mt-1">
                       {beforeFiles ? `${beforeFiles.size} files loaded` : 'Click to select folder'}
@@ -518,7 +518,7 @@ export const ProjectImportModal: React.FC<ProjectImportModalProps> = ({
                   >
                     <FolderOpen className="h-6 w-6 text-neutral-400 mx-auto mb-2" />
                     <div className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">
-                      2. After (Modified / Head)
+                      2. After (Updated version)
                     </div>
                     <div className="text-[11px] text-neutral-500 mt-1">
                       {afterFiles ? `${afterFiles.size} files loaded` : 'Click to select folder'}
@@ -544,7 +544,7 @@ export const ProjectImportModal: React.FC<ProjectImportModalProps> = ({
                     className="inline-flex items-center gap-2 px-5 py-2 text-xs font-semibold text-white bg-neutral-900 dark:bg-neutral-100 dark:text-neutral-900 rounded-lg hover:bg-neutral-800 disabled:opacity-40 cursor-pointer"
                   >
                     <GitCompare className="h-4 w-4" />
-                    <span>Compare Both Folders & Analyze</span>
+                    <span>Analyze Impact</span>
                   </button>
                 </div>
               </div>
