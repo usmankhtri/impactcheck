@@ -84,8 +84,8 @@ export const SettingsPage: React.FC = () => {
                   onClick={() => setThemeMode('light')}
                   className={`flex items-center gap-1.5 px-2.5 py-1 rounded transition-colors text-xs ${
                     themeMode === 'light'
-                      ? 'bg-white text-neutral-900 shadow-2xs font-semibold'
-                      : 'text-neutral-500 hover:text-neutral-900'
+                      ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-2xs font-semibold'
+                      : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200'
                   }`}
                   aria-label="Set light theme"
                 >
@@ -97,8 +97,8 @@ export const SettingsPage: React.FC = () => {
                   onClick={() => setThemeMode('dark')}
                   className={`flex items-center gap-1.5 px-2.5 py-1 rounded transition-colors text-xs ${
                     themeMode === 'dark'
-                      ? 'bg-neutral-900 text-white shadow-2xs font-semibold'
-                      : 'text-neutral-500 hover:text-neutral-200'
+                      ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-2xs font-semibold'
+                      : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200'
                   }`}
                   aria-label="Set dark theme"
                 >

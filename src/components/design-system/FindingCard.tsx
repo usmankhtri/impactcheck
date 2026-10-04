@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
 import {
-  ChevronDown,
-  ChevronUp,
   FileCode,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  ArrowRight,
   EyeOff,
-  Link2,
 } from 'lucide-react';
-import { Finding, FindingPriority } from '../../types/finding';
-import { TOKENS } from './tokens';
+import { Finding } from '../../types/finding';
 
 interface FindingCardProps {
   finding: Finding;
@@ -26,244 +25,148 @@ export const FindingCard: React.FC<FindingCardProps> = ({
   onDismissFinding,
   onJumpToFile,
   isHighlighted = false,
-  defaultExpanded = true,
   showActions = true,
 }) => {
-  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+  const [showEvidence, setShowEvidence] = useState(false);
 
-  const getPriorityClasses = (p: FindingPriority) => {
-    switch (p) {
-      case 'HIGH':
-        return TOKENS.status.high;
-      case 'MEDIUM':
-        return TOKENS.status.medium;
-      case 'LOW':
-        return TOKENS.status.low;
-      default:
-        return TOKENS.status.review;
-    }
-  };
-
-  const priorityStyle = getPriorityClasses(finding.priority);
+  const hasEvidence = Boolean(
+    finding.evidence.beforeSnippet ||
+    finding.evidence.afterSnippet ||
+    finding.evidence.snippet
+  );
 
   return (
     <article
       id={`finding-card-${finding.id}`}
-      className={`rounded-lg border transition-all ${priorityStyle.border} ${priorityStyle.bg} ${
-        finding.isReviewed ? 'opacity-65' : ''
+      className={`p-3.5 rounded-lg border transition-all ${
+        finding.isReviewed ? 'opacity-60 bg-neutral-50/50 dark:bg-neutral-900/20' : 'bg-white dark:bg-[#0e1117]'
       } ${
         isHighlighted
-          ? 'ring-2 ring-neutral-900 dark:ring-neutral-100 shadow-sm'
-          : 'shadow-2xs'
+          ? 'border-neutral-900 dark:border-white ring-1 ring-neutral-900 dark:ring-white'
+          : 'border-neutral-200 dark:border-neutral-800'
       }`}
     >
-      <div className="p-3.5">
-        {/* Top Badges & Actions */}
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {/* 1. Severity Badge */}
-            <span
-              className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-semibold uppercase tracking-wider ${priorityStyle.badge}`}
-            >
-              {finding.priority}
-            </span>
-
-            {/* Confidence Badge */}
-            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-neutral-300 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 bg-white/50 dark:bg-neutral-900/50">
-              {finding.confidence || 'HIGH'} Conf
-            </span>
-
-            {/* Category */}
-            <span className="text-[11px] font-medium text-neutral-500 capitalize">
-              {finding.category}
-            </span>
-
-            {/* Reviewed Indicator */}
-            {finding.isReviewed && (
-              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-0.5">
-                <CheckCircle2 className="h-3 w-3" />
-                <span>Reviewed</span>
-              </span>
-            )}
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 p-1 rounded cursor-pointer shrink-0"
-            aria-label={isExpanded ? 'Collapse finding details' : 'Expand finding details'}
-          >
-            {isExpanded ? (
-              <ChevronUp className="h-4 w-4" />
-            ) : (
-              <ChevronDown className="h-4 w-4" />
-            )}
-          </button>
-        </div>
-
-        {/* 2. Finding Title */}
-        <h4 className="text-xs font-semibold text-neutral-900 dark:text-neutral-100 leading-snug mt-2 break-words">
+      {/* 1. What changed (Title) */}
+      <div className="flex items-start justify-between gap-3">
+        <h4 className="text-xs sm:text-sm font-semibold text-neutral-950 dark:text-white leading-snug break-words">
           {finding.title}
         </h4>
+        {finding.isReviewed && (
+          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono flex items-center gap-1 shrink-0">
+            <CheckCircle2 className="h-3 w-3" />
+            <span>Reviewed</span>
+          </span>
+        )}
+      </div>
 
-        {/* 3. Affected File / Location */}
-        <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-mono text-neutral-600 dark:text-neutral-400">
-          {onJumpToFile ? (
+      {/* 2. Severity and Confidence (clean typography, no giant pills) */}
+      <div className="mt-1 flex items-center gap-1.5 text-[10px] font-mono uppercase text-neutral-500">
+        <span
+          className={
+            finding.priority === 'HIGH'
+              ? 'text-rose-600 dark:text-rose-400 font-semibold'
+              : finding.priority === 'MEDIUM'
+              ? 'text-amber-600 dark:text-amber-400 font-medium'
+              : 'text-neutral-500'
+          }
+        >
+          {finding.priority}
+        </span>
+        <span>·</span>
+        <span>{finding.confidence || 'HIGH'} CONFIDENCE</span>
+      </div>
+
+      {/* 3. Why does it matter (Explanation) */}
+      <p className="mt-2 text-xs text-neutral-700 dark:text-neutral-300 leading-relaxed">
+        {finding.explanation}
+      </p>
+
+      {/* 4. Where (Location) */}
+      <div className="mt-2 flex items-center gap-1 text-[11px] font-mono text-neutral-500 truncate">
+        <FileCode className="h-3.5 w-3.5 shrink-0 text-neutral-400" />
+        <span className="truncate">
+          {finding.affectedFile}
+          {finding.evidence.lineNumber ? `:${finding.evidence.lineNumber}` : ''}
+        </span>
+      </div>
+
+      {/* 5. What should I review? (Recommendation) */}
+      {finding.suggestedAction && (
+        <div className="mt-2 text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
+          <span className="font-semibold text-neutral-900 dark:text-neutral-200">Review: </span>
+          {finding.suggestedAction}
+        </div>
+      )}
+
+      {/* Expandable Evidence Snippet (if available) */}
+      {showEvidence && hasEvidence && (
+        <div className="mt-3 pt-3 border-t border-neutral-100 dark:border-neutral-800 space-y-2 text-xs font-mono">
+          {finding.evidence.beforeSnippet && (
+            <div className="p-2 rounded bg-rose-500/10 text-rose-700 dark:text-rose-300 text-[11px] leading-relaxed">
+              <span className="font-sans uppercase text-[10px] text-neutral-400 block mb-0.5">Before:</span>
+              <span className="break-all">{finding.evidence.beforeSnippet}</span>
+            </div>
+          )}
+          {finding.evidence.afterSnippet && (
+            <div className="p-2 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-[11px] leading-relaxed">
+              <span className="font-sans uppercase text-[10px] text-neutral-400 block mb-0.5">After:</span>
+              <span className="break-all">{finding.evidence.afterSnippet}</span>
+            </div>
+          )}
+          {finding.evidence.snippet && !finding.evidence.beforeSnippet && !finding.evidence.afterSnippet && (
+            <pre className="p-2 rounded bg-neutral-100 dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 text-[11px] overflow-x-auto">
+              {finding.evidence.snippet}
+            </pre>
+          )}
+        </div>
+      )}
+
+      {/* Actions Row */}
+      <div className="mt-3 pt-2.5 border-t border-neutral-100 dark:border-neutral-800/80 flex items-center justify-between gap-2 text-xs">
+        <div className="flex items-center gap-3">
+          {onJumpToFile && (
             <button
               type="button"
               onClick={() => onJumpToFile(finding.affectedFile)}
-              className="hover:text-neutral-950 dark:hover:text-neutral-100 truncate flex items-center gap-1 underline underline-offset-2 cursor-pointer text-left"
-              title="Jump to file in diff viewer"
+              className="text-neutral-900 dark:text-neutral-100 hover:underline font-medium text-[11px] cursor-pointer inline-flex items-center gap-1"
             >
-              <FileCode className="h-3 w-3 shrink-0 text-neutral-400" />
-              <span className="truncate">{finding.affectedFile}</span>
-              {finding.evidence.lineNumber && (
-                <span className="shrink-0 text-neutral-500 font-semibold">:{finding.evidence.lineNumber}</span>
-              )}
+              <span>View code</span>
+              <ArrowRight className="h-3 w-3" />
             </button>
-          ) : (
-            <span className="truncate flex items-center gap-1">
-              <FileCode className="h-3 w-3 shrink-0 text-neutral-400" />
-              <span className="truncate">{finding.affectedFile}</span>
-              {finding.evidence.lineNumber && (
-                <span className="shrink-0 text-neutral-500 font-semibold">:{finding.evidence.lineNumber}</span>
-              )}
-            </span>
+          )}
+
+          {hasEvidence && (
+            <button
+              type="button"
+              onClick={() => setShowEvidence(!showEvidence)}
+              className="text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 text-[11px] cursor-pointer inline-flex items-center gap-0.5"
+            >
+              <span>{showEvidence ? 'Hide evidence' : 'View evidence'}</span>
+              {showEvidence ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+            </button>
           )}
         </div>
 
-        {/* Expandable Body */}
-        {isExpanded && (
-          <div className="mt-3 pt-3 border-t border-neutral-200/60 dark:border-neutral-800/60 space-y-3 text-xs text-neutral-700 dark:text-neutral-300">
-            {/* 4. Evidence Section */}
-            {(finding.evidence.beforeSnippet || finding.evidence.afterSnippet || finding.evidence.snippet || (finding.detectionSignals && finding.detectionSignals.length > 1)) && (
-              <div className="space-y-2">
-                <div className="text-[10px] uppercase font-semibold tracking-wider text-neutral-500">
-                  Evidence
-                </div>
-
-                {/* Before / After Evidence */}
-                {(finding.evidence.beforeSnippet || finding.evidence.afterSnippet) && (
-                  <div className="rounded-md bg-neutral-100/90 dark:bg-neutral-900/80 p-2.5 border border-neutral-200 dark:border-neutral-800 font-mono text-[11px] space-y-1.5">
-                    {finding.evidence.beforeSnippet && (
-                      <div className="text-rose-700 dark:text-rose-300 flex items-start gap-1.5">
-                        <span className="font-semibold font-sans uppercase text-[10px] text-neutral-500 shrink-0">
-                          Before:
-                        </span>
-                        <span className="break-all">{finding.evidence.beforeSnippet}</span>
-                      </div>
-                    )}
-                    {finding.evidence.afterSnippet && (
-                      <div className="text-emerald-700 dark:text-emerald-300 flex items-start gap-1.5">
-                        <span className="font-semibold font-sans uppercase text-[10px] text-neutral-500 shrink-0">
-                          After:
-                        </span>
-                        <span className="break-all">{finding.evidence.afterSnippet}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Diff Excerpt */}
-                {finding.evidence.snippet && (
-                  <pre className="p-2.5 rounded-md bg-[#090b0e] text-neutral-200 font-mono text-[11px] overflow-x-auto leading-relaxed border border-neutral-800 max-h-40">
-                    {finding.evidence.snippet}
-                  </pre>
-                )}
-
-                {/* Detection Signals */}
-                {finding.detectionSignals && finding.detectionSignals.length > 1 && (
-                  <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-                    <span className="text-[10px] uppercase font-semibold tracking-wider text-neutral-500">
-                      Signals:
-                    </span>
-                    {finding.detectionSignals.map((sig, idx) => (
-                      <span
-                        key={idx}
-                        className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-neutral-200/70 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border border-neutral-300/60 dark:border-neutral-700/60"
-                      >
-                        {sig}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
+        {showActions && (
+          <div className="flex items-center gap-2">
+            {onToggleReviewed && (
+              <button
+                type="button"
+                onClick={() => onToggleReviewed(finding.id)}
+                className="text-[11px] text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100 cursor-pointer"
+              >
+                {finding.isReviewed ? 'Unmark' : 'Mark reviewed'}
+              </button>
             )}
-
-            {/* 5. Explanation Section */}
-            <div className="space-y-1.5">
-              {finding.changeType && (
-                <div className="text-[11px] text-neutral-600 dark:text-neutral-400">
-                  <span className="font-semibold text-neutral-800 dark:text-neutral-200">
-                    What changed:
-                  </span>{' '}
-                  {finding.changeType}
-                </div>
-              )}
-
-              <div>
-                <div className="text-[10px] uppercase font-semibold tracking-wider text-neutral-500 mb-1">
-                  Why it matters
-                </div>
-                <p className="leading-relaxed text-neutral-800 dark:text-neutral-200">
-                  {finding.explanation}
-                </p>
-              </div>
-
-              {finding.limitations && (
-                <div className="text-[10px] text-neutral-500 italic">
-                  Note: {finding.limitations}
-                </div>
-              )}
-            </div>
-
-            {/* Related findings */}
-            {finding.relatedFindingIds && finding.relatedFindingIds.length > 0 && (
-              <div className="text-[11px] text-neutral-500 flex items-center gap-1.5 pt-0.5">
-                <Link2 className="h-3 w-3 shrink-0" />
-                <span>
-                  {finding.relatedFindingIds.length} related review {finding.relatedFindingIds.length === 1 ? 'item' : 'items'} in this file
-                </span>
-              </div>
-            )}
-
-            {/* 6. Suggested Review Action */}
-            <div className="rounded-md bg-neutral-100/80 dark:bg-neutral-800/50 p-2.5 border border-neutral-200/80 dark:border-neutral-800">
-              <div className="text-[10px] uppercase font-semibold tracking-wider text-neutral-600 dark:text-neutral-400 mb-1">
-                Suggested review action
-              </div>
-              <p className="text-neutral-900 dark:text-neutral-100 leading-relaxed font-medium">
-                {finding.suggestedAction}
-              </p>
-            </div>
-
-            {/* Review and Dismiss Actions */}
-            {showActions && (
-              <div className="flex items-center justify-between pt-1 text-[11px]">
-                {onToggleReviewed && (
-                  <button
-                    type="button"
-                    onClick={() => onToggleReviewed(finding.id)}
-                    className="text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 flex items-center gap-1 cursor-pointer"
-                  >
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    <span>
-                      {finding.isReviewed ? 'Mark as unreviewed' : 'Mark as reviewed'}
-                    </span>
-                  </button>
-                )}
-
-                {onDismissFinding && (
-                  <button
-                    type="button"
-                    onClick={() => onDismissFinding(finding.id)}
-                    className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 flex items-center gap-1 cursor-pointer"
-                  >
-                    <EyeOff className="h-3 w-3" />
-                    <span>Dismiss</span>
-                  </button>
-                )}
-              </div>
+            {onDismissFinding && (
+              <button
+                type="button"
+                onClick={() => onDismissFinding(finding.id)}
+                className="text-[11px] text-neutral-400 hover:text-rose-600 cursor-pointer"
+                title="Dismiss finding"
+              >
+                Dismiss
+              </button>
             )}
           </div>
         )}

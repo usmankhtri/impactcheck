@@ -174,7 +174,7 @@ export const Header: React.FC = () => {
                   onClick={() => setThemeMode('dark')}
                   className={`px-2 py-0.5 rounded text-[11px] font-medium ${
                     themeMode === 'dark'
-                      ? 'bg-neutral-900 text-white shadow-2xs'
+                      ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-2xs'
                       : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200'
                   }`}
                 >

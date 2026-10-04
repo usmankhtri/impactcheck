@@ -16,6 +16,7 @@ import {
   Archive,
   CheckSquare,
   Sparkles,
+  Loader2,
 } from 'lucide-react';
 import { ParsedDiff, DiffFile } from '../../types/diff';
 import { Finding, FindingsSummary } from '../../types/finding';
@@ -88,42 +89,55 @@ export const DiffWorkbench: React.FC = () => {
   // Derived signature analyses
   const [changeMap, setChangeMap] = useState<ChangeMapData>({ nodes: [], edges: [], layers: {} });
   const [breakingWatchlist, setBreakingWatchlist] = useState<BreakingChangeItem[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // Execute or Load Analysis
-  const handleCompleteAnalysis = (
+  const handleCompleteAnalysis = async (
     parsed: ParsedDiff,
     rawDiffText?: string,
     inferredProjectName?: string
   ) => {
-    const analysis = runAnalysis(parsed);
-    const initialChecklist = generateChecklistFromFindings(analysis.findings);
-    const map = buildChangeMap(parsed.files, analysis.findings);
-    const watchlist = extractBreakingWatchlist(parsed.files, analysis.findings);
-    const name = inferredProjectName || parsed.files[0]?.newPath.split('/')[0] || 'Project Changes';
+    setIsAnalyzing(true);
+    const startTime = performance.now();
 
-    setParsedDiff(parsed);
-    setProjectName(name);
-    setFindings(analysis.findings);
-    setSummary(analysis.summary);
-    setDependencies(analysis.dependencies);
-    setChecklist(initialChecklist);
-    setChangeMap(map);
-    setBreakingWatchlist(watchlist);
-    setSelectedFileId(parsed.files[0]?.id || null);
-    setSelectedFindingId(null);
-    setActiveView('diff');
-    setActiveMobileTab('diff');
+    try {
+      const analysis = runAnalysis(parsed);
+      const initialChecklist = generateChecklistFromFindings(analysis.findings);
+      const map = buildChangeMap(parsed.files, analysis.findings);
+      const watchlist = extractBreakingWatchlist(parsed.files, analysis.findings);
+      const name = inferredProjectName || parsed.files[0]?.newPath.split('/')[0] || 'Project Changes';
 
-    // Save to local history
-    saveHistoryEntry({
-      name,
-      totalFiles: parsed.totalFiles,
-      totalAdditions: parsed.totalAdditions,
-      totalDeletions: parsed.totalDeletions,
-      findingsCount: analysis.findings.length,
-      highPriorityCount: analysis.summary.byPriority.HIGH,
-      diffText: rawDiffText,
-    });
+      const elapsed = performance.now() - startTime;
+      if (elapsed < 2000) {
+        await new Promise((resolve) => setTimeout(resolve, 2000 - elapsed));
+      }
+
+      setParsedDiff(parsed);
+      setProjectName(name);
+      setFindings(analysis.findings);
+      setSummary(analysis.summary);
+      setDependencies(analysis.dependencies);
+      setChecklist(initialChecklist);
+      setChangeMap(map);
+      setBreakingWatchlist(watchlist);
+      setSelectedFileId(parsed.files[0]?.id || null);
+      setSelectedFindingId(null);
+      setActiveView('diff');
+      setActiveMobileTab('diff');
+
+      // Save to local history
+      saveHistoryEntry({
+        name,
+        totalFiles: parsed.totalFiles,
+        totalAdditions: parsed.totalAdditions,
+        totalDeletions: parsed.totalDeletions,
+        findingsCount: analysis.findings.length,
+        highPriorityCount: analysis.summary.byPriority.HIGH,
+        diffText: rawDiffText,
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const handleClear = () => {

@@ -85,8 +85,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 onClick={() => setThemeMode('light')}
                 className={`flex items-center gap-1 px-2 py-1 rounded transition-colors text-xs ${
                   themeMode === 'light'
-                    ? 'bg-white text-neutral-900 shadow-2xs font-semibold'
-                    : 'text-neutral-500 hover:text-neutral-900'
+                    ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-2xs font-semibold'
+                    : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200'
                 }`}
                 title="Light"
               >
@@ -98,8 +98,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 onClick={() => setThemeMode('dark')}
                 className={`flex items-center gap-1 px-2 py-1 rounded transition-colors text-xs ${
                   themeMode === 'dark'
-                    ? 'bg-neutral-900 text-white shadow-2xs font-semibold'
-                    : 'text-neutral-500 hover:text-neutral-200'
+                    ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-2xs font-semibold'
+                    : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200'
                 }`}
                 title="Dark"
               >
@@ -111,7 +111,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 onClick={() => setThemeMode('system')}
                 className={`flex items-center gap-1 px-2 py-1 rounded transition-colors text-xs ${
                   themeMode === 'system'
-                    ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white shadow-2xs font-semibold'
+                    ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-2xs font-semibold'
                     : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200'
                 }`}
                 title="System"
