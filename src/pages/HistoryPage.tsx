@@ -119,7 +119,7 @@ export const HistoryPage: React.FC = () => {
                         type="text"
                         value={editName}
                         onChange={(e) => setEditName(e.target.value)}
-                        className="px-2.5 py-1 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-850 text-xs text-neutral-900 dark:text-neutral-100"
+                        className="px-2.5 py-1 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-xs text-neutral-900 dark:text-neutral-100"
                         autoFocus
                       />
                       <button

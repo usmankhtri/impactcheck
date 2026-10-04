@@ -57,7 +57,7 @@ export const LandingPage: React.FC = () => {
 
             <Link
               to="/docs"
-              className="inline-flex items-center gap-2 px-5 py-2.5 text-xs sm:text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-850 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-lg transition-colors border border-neutral-200 dark:border-neutral-800"
+              className="inline-flex items-center gap-2 px-5 py-2.5 text-xs sm:text-sm font-semibold text-neutral-900 dark:text-neutral-100 bg-neutral-100 dark:bg-neutral-900 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-lg transition-colors border border-neutral-300 dark:border-neutral-700 shadow-2xs"
             >
               <span>View documentation</span>
             </Link>
@@ -100,8 +100,8 @@ export const LandingPage: React.FC = () => {
                   Changed Files (3)
                 </div>
                 <div className="space-y-1">
-                  <div className="p-2 rounded bg-neutral-100 dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100 border-l-2 border-neutral-900 dark:border-neutral-100 flex items-center justify-between">
-                    <div className="truncate font-mono text-[11px]">routes/users.ts</div>
+                  <div className="p-2 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 border-l-2 border-neutral-900 dark:border-neutral-100 flex items-center justify-between">
+                    <div className="truncate font-mono text-[11px] text-neutral-900 dark:text-neutral-100 font-semibold">routes/users.ts</div>
                     <span className="text-[10px] font-mono px-1 rounded bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300">
                       1 high
                     </span>
@@ -437,7 +437,7 @@ export const LandingPage: React.FC = () => {
 
               <Link
                 to="/docs"
-                className="inline-flex items-center gap-2 px-5 py-2.5 text-xs sm:text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-850 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors border border-neutral-200 dark:border-neutral-800"
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-xs sm:text-sm font-semibold text-neutral-900 dark:text-neutral-100 bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors border border-neutral-300 dark:border-neutral-700 shadow-2xs"
               >
                 <span>Read the docs</span>
               </Link>

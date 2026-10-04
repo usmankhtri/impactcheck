@@ -362,7 +362,7 @@ export const ProjectImportModal: React.FC<ProjectImportModalProps> = ({
                 onClick={() => setActiveMode('zip')}
                 className={`p-3 rounded-lg border text-left transition-colors cursor-pointer ${
                   activeMode === 'zip'
-                    ? 'border-neutral-900 dark:border-neutral-100 bg-neutral-50 dark:bg-neutral-850 font-medium'
+                    ? 'border-neutral-900 dark:border-neutral-100 bg-neutral-100 dark:bg-neutral-800 font-medium'
                     : 'border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700'
                 }`}
               >
@@ -376,7 +376,7 @@ export const ProjectImportModal: React.FC<ProjectImportModalProps> = ({
                 onClick={() => setActiveMode('folder')}
                 className={`p-3 rounded-lg border text-left transition-colors cursor-pointer ${
                   activeMode === 'folder'
-                    ? 'border-neutral-900 dark:border-neutral-100 bg-neutral-50 dark:bg-neutral-850 font-medium'
+                    ? 'border-neutral-900 dark:border-neutral-100 bg-neutral-100 dark:bg-neutral-800 font-medium'
                     : 'border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700'
                 }`}
               >
@@ -390,7 +390,7 @@ export const ProjectImportModal: React.FC<ProjectImportModalProps> = ({
                 onClick={() => setActiveMode('compare')}
                 className={`p-3 rounded-lg border text-left transition-colors cursor-pointer ${
                   activeMode === 'compare'
-                    ? 'border-neutral-900 dark:border-neutral-100 bg-neutral-50 dark:bg-neutral-850 font-medium'
+                    ? 'border-neutral-900 dark:border-neutral-100 bg-neutral-100 dark:bg-neutral-800 font-medium'
                     : 'border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700'
                 }`}
               >
@@ -404,7 +404,7 @@ export const ProjectImportModal: React.FC<ProjectImportModalProps> = ({
                 onClick={() => setActiveMode('diff_file')}
                 className={`p-3 rounded-lg border text-left transition-colors cursor-pointer ${
                   activeMode === 'diff_file'
-                    ? 'border-neutral-900 dark:border-neutral-100 bg-neutral-50 dark:bg-neutral-850 font-medium'
+                    ? 'border-neutral-900 dark:border-neutral-100 bg-neutral-100 dark:bg-neutral-800 font-medium'
                     : 'border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700'
                 }`}
               >
@@ -418,7 +418,7 @@ export const ProjectImportModal: React.FC<ProjectImportModalProps> = ({
                 onClick={() => setActiveMode('paste')}
                 className={`p-3 rounded-lg border text-left transition-colors cursor-pointer ${
                   activeMode === 'paste'
-                    ? 'border-neutral-900 dark:border-neutral-100 bg-neutral-50 dark:bg-neutral-850 font-medium'
+                    ? 'border-neutral-900 dark:border-neutral-100 bg-neutral-100 dark:bg-neutral-800 font-medium'
                     : 'border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700'
                 }`}
               >

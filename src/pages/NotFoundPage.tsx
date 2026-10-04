@@ -33,7 +33,7 @@ export const NotFoundPage: React.FC = () => {
 
           <Link
             to="/"
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-850 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-md transition-colors border border-neutral-200 dark:border-neutral-800"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-neutral-800 dark:text-neutral-200 bg-neutral-100 dark:bg-neutral-900 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-md transition-colors border border-neutral-300 dark:border-neutral-700"
           >
             <Home className="h-3.5 w-3.5" />
             <span>Home</span>

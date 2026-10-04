@@ -131,7 +131,7 @@ export const ReportPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={handleCopyMarkdown}
-              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-850 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-xs font-medium text-neutral-700 dark:text-neutral-300 transition-colors shadow-2xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-xs font-semibold text-neutral-800 dark:text-neutral-200 transition-colors shadow-2xs cursor-pointer"
             >
               <Copy className="h-3.5 w-3.5" />
               <span>Copy Markdown</span>
@@ -223,9 +223,9 @@ export const ReportPage: React.FC = () => {
                   <th className="py-2.5 px-4 font-semibold text-right">Findings</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-100 dark:divide-neutral-850 font-mono text-[11px]">
+              <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800 font-mono text-[11px]">
                 {files.map((f) => (
-                  <tr key={f.path} className="hover:bg-neutral-50/50 dark:hover:bg-neutral-850/40">
+                  <tr key={f.path} className="hover:bg-neutral-50/50 dark:hover:bg-neutral-800/40">
                     <td className="py-2.5 px-4 text-neutral-900 dark:text-neutral-100 truncate max-w-xs sm:max-w-md">
                       {f.path}
                     </td>
@@ -301,9 +301,9 @@ export const ReportPage: React.FC = () => {
                     <th className="py-2.5 px-4 font-semibold text-center">Major Bump?</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-neutral-100 dark:divide-neutral-850 font-mono text-[11px]">
+                <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800 font-mono text-[11px]">
                   {dependencies.map((d) => (
-                    <tr key={d.id} className="hover:bg-neutral-50/50 dark:hover:bg-neutral-850/40">
+                    <tr key={d.id} className="hover:bg-neutral-50/50 dark:hover:bg-neutral-800/40">
                       <td className="py-2.5 px-4 font-semibold text-neutral-900 dark:text-neutral-100">
                         {d.name}
                       </td>
@@ -337,7 +337,7 @@ export const ReportPage: React.FC = () => {
           <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 uppercase tracking-wider text-[11px]">
             Verification Checklist ({checklist.length})
           </h2>
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#111419] p-4 divide-y divide-neutral-100 dark:divide-neutral-850 text-xs shadow-2xs">
+          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#111419] p-4 divide-y divide-neutral-100 dark:divide-neutral-800 text-xs shadow-2xs">
             {checklist.map((item) => (
               <div key={item.id} className="py-2.5 flex items-center gap-3">
                 <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 uppercase font-semibold">

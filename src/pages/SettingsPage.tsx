@@ -158,7 +158,7 @@ export const SettingsPage: React.FC = () => {
               <select
                 value={diffMode}
                 onChange={(e) => setDiffMode(e.target.value as 'unified' | 'split')}
-                className="px-2.5 py-1 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100 text-xs"
+                className="px-2.5 py-1 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-xs"
               >
                 <option value="unified">Unified</option>
                 <option value="split">Split</option>
@@ -177,7 +177,7 @@ export const SettingsPage: React.FC = () => {
               <select
                 value={contextLines}
                 onChange={(e) => setContextLines(Number(e.target.value))}
-                className="px-2.5 py-1 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-850 text-neutral-900 dark:text-neutral-100 text-xs font-mono"
+                className="px-2.5 py-1 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-xs font-mono"
               >
                 <option value={2}>2 lines</option>
                 <option value={3}>3 lines (default)</option>
@@ -262,7 +262,7 @@ export const SettingsPage: React.FC = () => {
           <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 uppercase tracking-wider text-[11px]">
             Keyboard Shortcuts
           </h2>
-          <div className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#111419] divide-y divide-neutral-100 dark:divide-neutral-850 text-xs">
+          <div className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#111419] divide-y divide-neutral-100 dark:divide-neutral-800 text-xs">
             <div className="py-2 flex items-center justify-between">
               <span className="text-neutral-600 dark:text-neutral-400">Next finding</span>
               <kbd className="px-2 py-0.5 rounded border border-neutral-300 dark:border-neutral-700 font-mono text-[11px]">j / ↓</kbd>

@@ -147,7 +147,7 @@ export const Header: React.FC = () => {
                 onClick={() => setMobileMenuOpen(false)}
                 className={`py-2 px-3 rounded-md transition-colors ${
                   isActive(link.path)
-                    ? 'bg-neutral-100 dark:bg-neutral-850 text-neutral-950 dark:text-white font-semibold'
+                    ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-950 dark:text-white font-semibold'
                     : 'hover:bg-neutral-50 dark:hover:bg-neutral-900'
                 }`}
               >

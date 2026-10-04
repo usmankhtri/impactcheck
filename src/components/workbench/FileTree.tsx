@@ -109,7 +109,7 @@ export const FileTree: React.FC<FileTreeProps> = ({
         );
       case 'unchanged':
         return (
-          <span className="text-[10px] font-mono px-1 py-0.2 bg-neutral-100 dark:bg-neutral-850 text-neutral-500 rounded" title="Unchanged file">
+          <span className="text-[10px] font-mono px-1 py-0.2 bg-neutral-100 dark:bg-neutral-800 text-neutral-500 rounded" title="Unchanged file">
             —
           </span>
         );

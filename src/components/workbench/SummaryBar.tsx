@@ -122,7 +122,7 @@ export const SummaryBar: React.FC<SummaryBarProps> = ({
 
             {/* Line delta counters / Snapshot indicator */}
             {parsedDiff.analysisMode === 'snapshot' || parsedDiff.hasBaseline === false ? (
-              <span className="text-[11px] font-mono text-neutral-500 bg-neutral-100 dark:bg-neutral-850 px-1.5 py-0.5 rounded font-medium">
+              <span className="text-[11px] font-mono text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded font-medium border border-neutral-200 dark:border-neutral-700">
                 Snapshot ({parsedDiff.totalLinesAnalyzed || 0} lines)
               </span>
             ) : (

@@ -101,7 +101,7 @@ function getStatusBadge(status: DiffFile['status']) {
       );
     case 'unchanged':
       return (
-        <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold uppercase bg-neutral-100 text-neutral-600 dark:bg-neutral-850 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-800">
+        <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold uppercase bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-700">
           Unchanged
         </span>
       );
@@ -274,7 +274,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
         {/* Left: Finding Counter and Navigator */}
         <div className="flex items-center gap-2">
           {activeFindings.length > 0 ? (
-            <div className="flex items-center gap-1.5 bg-neutral-100 dark:bg-neutral-850 px-2 py-1 rounded-md border border-neutral-200 dark:border-neutral-750">
+            <div className="flex items-center gap-1.5 bg-neutral-100 dark:bg-neutral-800 px-2 py-1 rounded-md border border-neutral-200 dark:border-neutral-700">
               <span className="text-[11px] text-neutral-600 dark:text-neutral-400 font-mono font-medium">
                 Finding{' '}
                 <span className="text-neutral-900 dark:text-neutral-100 font-bold">
@@ -310,7 +310,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
           {/* Quick toggle: Collapse / Expand all */}
           <button
             onClick={allCollapsed ? expandAllFiles : collapseAllFiles}
-            className="hidden sm:inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-850 rounded transition-colors cursor-pointer"
+            className="hidden sm:inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded transition-colors cursor-pointer"
           >
             {allCollapsed ? 'Expand all' : 'Collapse all'}
           </button>
@@ -320,7 +320,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
         <div className="flex items-center gap-2 sm:gap-3 text-[11px]">
           {/* Diff Mode Toggle (Unified / Split) */}
           {onToggleDiffMode && (
-            <div className="flex items-center p-0.5 rounded-md border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-850">
+            <div className="flex items-center p-0.5 rounded-md border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-800">
               <button
                 onClick={() => onToggleDiffMode('unified')}
                 className={`flex items-center gap-1 px-2.5 py-1 rounded text-[11px] transition-colors cursor-pointer ${
@@ -353,7 +353,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
             onClick={() => setWrapLines(!wrapLines)}
             className={`flex items-center gap-1 px-2 py-1 rounded border transition-colors cursor-pointer ${
               wrapLines
-                ? 'bg-neutral-200/80 dark:bg-neutral-750 border-neutral-300 dark:border-neutral-650 text-neutral-900 dark:text-white font-medium'
+                ? 'bg-neutral-200/80 dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-medium'
                 : 'border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
             }`}
             title="Toggle word wrap for long code lines"
@@ -367,7 +367,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
             onClick={() => setShowOnlyChangedLines(!showOnlyChangedLines)}
             className={`hidden sm:flex items-center gap-1 px-2 py-1 rounded border transition-colors cursor-pointer ${
               showOnlyChangedLines
-                ? 'bg-neutral-200/80 dark:bg-neutral-750 border-neutral-300 dark:border-neutral-650 text-neutral-900 dark:text-white font-medium'
+                ? 'bg-neutral-200/80 dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white font-medium'
                 : 'border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
             }`}
             title="Toggle unchanged context lines"
@@ -447,7 +447,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
                 <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
                   <button
                     onClick={() => toggleCollapse(file.id)}
-                    className="p-1 -ml-1 text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 rounded hover:bg-neutral-200/60 dark:hover:bg-neutral-750 transition-colors cursor-pointer shrink-0"
+                    className="p-1 -ml-1 text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 rounded hover:bg-neutral-200/60 dark:hover:bg-neutral-800 transition-colors cursor-pointer shrink-0"
                     aria-label={isCollapsed ? 'Expand file' : 'Collapse file'}
                   >
                     {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -511,7 +511,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
                   {/* Copy Path */}
                   <button
                     onClick={() => copyFilePath(file.newPath, file.id)}
-                    className="hidden sm:flex items-center gap-1 px-2 py-1 rounded border border-neutral-200 dark:border-neutral-750 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-[11px] text-neutral-600 dark:text-neutral-400 transition-colors cursor-pointer"
+                    className="hidden sm:flex items-center gap-1 px-2 py-1 rounded border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-[11px] text-neutral-600 dark:text-neutral-400 transition-colors cursor-pointer"
                     title="Copy relative file path"
                   >
                     {copiedPathId === file.id ? (
@@ -525,7 +525,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
                   {/* Copy File Diff */}
                   <button
                     onClick={() => copyFileDiff(file)}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded border border-neutral-200 dark:border-neutral-750 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-[11px] font-medium text-neutral-700 dark:text-neutral-300 transition-colors cursor-pointer"
+                    className="flex items-center gap-1 px-2.5 py-1 rounded border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-[11px] font-medium text-neutral-700 dark:text-neutral-300 transition-colors cursor-pointer"
                     title="Copy diff patch for this file"
                   >
                     {copiedFileId === file.id ? (
