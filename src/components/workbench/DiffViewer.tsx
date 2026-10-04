@@ -95,8 +95,14 @@ function getStatusBadge(status: DiffFile['status']) {
       );
     case 'detected':
       return (
-        <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold uppercase bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
-          Detected
+        <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold uppercase bg-neutral-100 text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200 border border-neutral-300 dark:border-neutral-700">
+          Snapshot
+        </span>
+      );
+    case 'unchanged':
+      return (
+        <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold uppercase bg-neutral-100 text-neutral-600 dark:bg-neutral-850 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-800">
+          Unchanged
         </span>
       );
     case 'modified':
@@ -487,14 +493,20 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
 
                 {/* Right: Stats & Actions */}
                 <div className="flex items-center gap-2 sm:gap-3 shrink-0 text-xs">
-                  <div className="flex items-center gap-1.5 font-mono text-[11px] tabular-nums">
-                    <span className="text-emerald-600 dark:text-emerald-400 font-bold">
-                      +{file.additions}
+                  {file.status === 'detected' ? (
+                    <span className="text-[11px] font-mono text-neutral-500 font-medium">
+                      {file.linesAnalyzed || (file.hunks[0]?.newLines) || 0} lines
                     </span>
-                    <span className="text-rose-600 dark:text-rose-400 font-bold">
-                      -{file.deletions}
-                    </span>
-                  </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 font-mono text-[11px] tabular-nums">
+                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                        +{file.additions}
+                      </span>
+                      <span className="text-rose-600 dark:text-rose-400 font-bold">
+                        -{file.deletions}
+                      </span>
+                    </div>
+                  )}
 
                   {/* Copy Path */}
                   <button

@@ -39,7 +39,7 @@ export const LandingPage: React.FC = () => {
           </div>
 
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-neutral-950 dark:text-white max-w-3xl mx-auto text-balance">
-            Understand what your code changes could affect.
+            Understand what your code changes could affect before you merge.
           </h1>
 
           <p className="mt-5 text-base sm:text-lg text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto leading-relaxed text-balance">
@@ -193,7 +193,7 @@ export const LandingPage: React.FC = () => {
                 Workflow
               </span>
               <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-950 dark:text-white mt-1.5">
-                How DiffGuard works
+                How ImpactCheck works
               </h2>
               <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-2">
                 A structured four-step review workflow designed for engineers before opening or approving changes.
@@ -214,7 +214,7 @@ export const LandingPage: React.FC = () => {
               <div className="p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#111419] space-y-2">
                 <div className="font-mono text-xs font-bold text-neutral-400">02</div>
                 <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                  DiffGuard maps the changes
+                  ImpactCheck maps the changes
                 </h3>
                 <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
                   Statically classifies modified files into architectural layers and correlates relationships between routes, services, schemas, and tests.
@@ -255,7 +255,7 @@ export const LandingPage: React.FC = () => {
                 Work with changes your way
               </h2>
               <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-2">
-                You do not need to generate manual patch files. DiffGuard accepts projects and directories directly.
+                You do not need to generate manual patch files. ImpactCheck accepts projects and directories directly.
               </p>
             </div>
 
@@ -404,7 +404,7 @@ export const LandingPage: React.FC = () => {
               </div>
 
               <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed max-w-3xl">
-                Core static analysis runs in your browser memory. Uploaded files are treated as untrusted data, and DiffGuard never executes uploaded source code, scripts, or binaries. Optional vulnerability checks only transmit package names and versions to the public OSV API; source code is never sent.
+                Core static analysis runs in your browser memory. Uploaded files are treated as untrusted data, and ImpactCheck never executes uploaded source code, scripts, or binaries. Optional vulnerability checks only transmit package names and versions to the public OSV API; source code is never sent.
               </p>
 
               <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-neutral-500 pt-2 border-t border-neutral-100 dark:border-neutral-800">

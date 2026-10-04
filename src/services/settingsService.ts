@@ -1,4 +1,4 @@
-export interface DiffGuardSettings {
+export interface ImpactCheckSettings {
   diffMode: 'unified' | 'split';
   contextLines: number;
   osvLookup: boolean;
@@ -7,9 +7,12 @@ export interface DiffGuardSettings {
   excludeNoise: boolean;
 }
 
-const SETTINGS_KEY = 'diffguard_user_settings';
+export type DiffGuardSettings = ImpactCheckSettings;
 
-export const DEFAULT_SETTINGS: DiffGuardSettings = {
+const PRIMARY_SETTINGS_KEY = 'impactcheck_user_settings';
+const LEGACY_SETTINGS_KEY = 'diffguard_user_settings';
+
+export const DEFAULT_SETTINGS: ImpactCheckSettings = {
   diffMode: 'unified',
   contextLines: 3,
   osvLookup: true,
@@ -18,10 +21,10 @@ export const DEFAULT_SETTINGS: DiffGuardSettings = {
   excludeNoise: true,
 };
 
-export function getSettings(): DiffGuardSettings {
+export function getSettings(): ImpactCheckSettings {
   if (typeof localStorage === 'undefined') return DEFAULT_SETTINGS;
   try {
-    const raw = localStorage.getItem(SETTINGS_KEY);
+    const raw = localStorage.getItem(PRIMARY_SETTINGS_KEY) || localStorage.getItem(LEGACY_SETTINGS_KEY);
     if (!raw) return DEFAULT_SETTINGS;
     const parsed = JSON.parse(raw);
     return { ...DEFAULT_SETTINGS, ...parsed };
@@ -30,13 +33,13 @@ export function getSettings(): DiffGuardSettings {
   }
 }
 
-export function saveSettings(partial: Partial<DiffGuardSettings>): DiffGuardSettings {
+export function saveSettings(partial: Partial<ImpactCheckSettings>): ImpactCheckSettings {
   const current = getSettings();
-  const updated: DiffGuardSettings = { ...current, ...partial };
+  const updated: ImpactCheckSettings = { ...current, ...partial };
   
   if (typeof localStorage !== 'undefined') {
     try {
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify(updated));
+      localStorage.setItem(PRIMARY_SETTINGS_KEY, JSON.stringify(updated));
     } catch {
       // Ignore storage errors
     }

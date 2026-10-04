@@ -13,13 +13,14 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'diffguard_theme_mode';
+const STORAGE_KEY = 'impactcheck_theme_mode';
+const LEGACY_STORAGE_KEY = 'diffguard_theme_mode';
 const LEGACY_KEY = 'diffguard_theme';
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [themeMode, setThemeModeState] = useState<ThemeMode>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_KEY);
+      const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY) || localStorage.getItem(LEGACY_KEY);
       if (saved === 'dark' || saved === 'light' || saved === 'system') {
         return saved as ThemeMode;
       }

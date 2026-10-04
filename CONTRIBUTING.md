@@ -1,13 +1,13 @@
-# Contributing to DiffGuard
+# Contributing to ImpactCheck
 
-Thank you for your interest in improving DiffGuard!
+Thank you for your interest in improving ImpactCheck!
 
 ## Development Setup
 
 1. **Fork and clone** the repository:
    ```bash
-   git clone https://github.com/promptility/diffguard.git
-   cd diffguard
+   git clone https://github.com/promptility/impactcheck.git
+   cd impactcheck
    ```
 
 2. **Install dependencies**:

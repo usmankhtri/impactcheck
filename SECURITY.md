@@ -2,10 +2,10 @@
 
 ## Reporting a Security Issue
 
-We take the security of developer tools seriously. If you discover a security vulnerability in DiffGuard's parser, input sanitization, or report generation, please report it responsibly rather than opening a public issue.
+We take the security of developer tools seriously. If you discover a security vulnerability in ImpactCheck's parser, input sanitization, or report generation, please report it responsibly rather than opening a public issue.
 
 Please report vulnerabilities to the maintainers at:
-`[MAINTAINER_SECURITY_EMAIL_PLACEHOLDER: e.g. promptility.ai@gmail.com or via GitHub Security Advisories]`
+`[MAINTAINER_SECURITY_EMAIL: promptility.ai@gmail.com or via GitHub Security Advisories]`
 
 Include:
 - A description of the issue and potential impact
@@ -17,10 +17,10 @@ We aim to acknowledge reports within 48 hours and coordinate remediation before 
 ## Security Posture & Architecture
 
 ### 1. Untrusted Input Handling
-DiffGuard treats all user input—whether uploaded ZIP files, local folder trees, or pasted Git diffs—as strictly untrusted data. Input parsing relies on deterministic regular expressions and lexical tokenizers.
+ImpactCheck treats all user input—whether uploaded ZIP files, local folder trees, or pasted Git diffs—as strictly untrusted data. Input parsing relies on deterministic regular expressions and lexical tokenizers.
 
 ### 2. Zero Code Execution
-DiffGuard never executes, evaluates (`eval()`), or interprets analyzed source files:
+ImpactCheck never executes, evaluates (`eval()`), or interprets analyzed source files:
 - No JavaScript/TypeScript execution
 - No Python/Ruby/Go script execution
 - No execution of build lifecycle hooks (e.g. `npm postinstall`, `make`, shell scripts)
@@ -37,9 +37,9 @@ Archive parsing (`.zip`) executes completely in browser memory:
 - HTML report exports use strict HTML entity escaping (`&`, `<`, `>`, `"`, `'`) for all interpolated content to prevent cross-site scripting (XSS).
 
 ### 5. Dependency Lookup Privacy
-- When optional vulnerability checking is enabled, DiffGuard transmits solely the package name and version string (e.g. `express@4.18.2`) to the public OSV API (`api.osv.dev`).
+- When optional vulnerability checking is enabled, ImpactCheck transmits solely the package name and version string (e.g. `express@4.18.2`) to the public OSV API (`api.osv.dev`).
 - Proprietary source code, filenames, and internal repository paths are never sent over the network.
 - Users can disable public vulnerability lookups at any time in Settings.
 
 ### 6. Limitations of Static Analysis
-DiffGuard provides deterministic static heuristics for code review. Static heuristics cannot evaluate runtime configuration, dynamically injected environment variables, or remote infrastructure states. DiffGuard is a review assistant and does not replace formal application security testing.
+ImpactCheck provides deterministic static heuristics for code review. Static heuristics cannot evaluate runtime configuration, dynamically injected environment variables, or remote infrastructure states. ImpactCheck is a review assistant and does not replace formal application security testing.

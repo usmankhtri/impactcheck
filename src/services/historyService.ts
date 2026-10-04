@@ -1,5 +1,3 @@
-import { ParsedDiff } from '../types/diff';
-import { Finding, FindingsSummary } from '../types/finding';
 import { getSettings } from './settingsService';
 
 export interface HistoryEntry {
@@ -15,13 +13,14 @@ export interface HistoryEntry {
   diffText?: string;
 }
 
-const STORAGE_KEY = 'diffguard_recent_history';
+const PRIMARY_STORAGE_KEY = 'impactcheck_recent_history';
+const LEGACY_STORAGE_KEY = 'diffguard_recent_history';
 const MAX_ENTRIES = 12;
 
 export function getHistory(): HistoryEntry[] {
   if (typeof localStorage === 'undefined') return [];
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(PRIMARY_STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
     if (!raw) return [];
     return JSON.parse(raw);
   } catch {
@@ -50,12 +49,12 @@ export function saveHistoryEntry(entry: Omit<HistoryEntry, 'id' | 'timestamp'>):
   ].slice(0, MAX_ENTRIES);
 
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    localStorage.setItem(PRIMARY_STORAGE_KEY, JSON.stringify(updated));
   } catch {
     // Quota exceeded: trim diffText
     const trimmed = updated.map((u) => ({ ...u, diffText: undefined }));
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
+      localStorage.setItem(PRIMARY_STORAGE_KEY, JSON.stringify(trimmed));
     } catch {
       // Ignore
     }
@@ -67,7 +66,7 @@ export function renameHistoryEntry(id: string, newName: string): HistoryEntry[] 
   const current = getHistory();
   const updated = current.map((item) => (item.id === id ? { ...item, name: newName } : item));
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    localStorage.setItem(PRIMARY_STORAGE_KEY, JSON.stringify(updated));
   } catch {
     // Ignore
   }
@@ -78,7 +77,7 @@ export function deleteHistoryEntry(id: string): HistoryEntry[] {
   const current = getHistory();
   const updated = current.filter((item) => item.id !== id);
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    localStorage.setItem(PRIMARY_STORAGE_KEY, JSON.stringify(updated));
   } catch {
     // Ignore
   }
@@ -87,7 +86,8 @@ export function deleteHistoryEntry(id: string): HistoryEntry[] {
 
 export function clearAllHistory(): void {
   try {
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(PRIMARY_STORAGE_KEY);
+    localStorage.removeItem(LEGACY_STORAGE_KEY);
   } catch {
     // Ignore
   }

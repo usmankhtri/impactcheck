@@ -1,9 +1,8 @@
-import { ParsedDiff } from './diff';
 import { Finding, FindingsSummary } from './finding';
 import { DependencyChange } from './dependency';
 import { ReviewChecklistItem } from './checklist';
 
-export interface DiffGuardReport {
+export interface ImpactCheckReport {
   version: string;
   generatedAt: string;
   tool: {
@@ -37,3 +36,6 @@ export interface DiffGuardReport {
   checklist: ReviewChecklistItem[];
   disclaimers: string[];
 }
+
+// Backward-compatibility alias
+export type DiffGuardReport = ImpactCheckReport;

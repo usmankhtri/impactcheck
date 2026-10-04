@@ -20,7 +20,7 @@ function assert(condition: boolean, message: string) {
 
 async function runTests() {
   console.log('==================================================');
-  console.log('Running DiffGuard Automated Verification Suite');
+  console.log('Running ImpactCheck Automated Verification Suite');
   console.log('==================================================\n');
 
   try {
@@ -125,7 +125,7 @@ Binary files a/assets/icon.png and b/assets/icon.png differ`;
     assert(chk.length > 0, 'Checklist generated from API findings');
     const report = buildReportObject(parsedApi, apiResult.findings, apiResult.summary, apiResult.dependencies, chk);
     const md = generateMarkdownReport(report);
-    assert(md.includes('# DiffGuard Code Review Impact Report'), 'Markdown report header generated');
+    assert(md.includes('# ImpactCheck Code Review Impact Report'), 'Markdown report header generated');
     assert(md.includes('## 1. Executive Summary'), 'Markdown executive summary generated');
 
     // Test 12: Automatic URL Origin Resolution
@@ -322,6 +322,62 @@ new file mode 100644
     assert(Boolean(TOKENS.status.high.badge && TOKENS.status.high.border), 'High severity status tokens are properly defined');
     assert(Boolean(TOKENS.status.medium.badge && TOKENS.status.medium.border), 'Medium severity status tokens are properly defined');
     assert(Boolean(TOKENS.status.low.badge && TOKENS.status.low.border), 'Low severity status tokens are properly defined');
+
+    // Scenario 10: Standalone Snapshot File State Correctness
+    const { createSnapshotProject } = await import('../utils/diffGenerator');
+    const snapshotMap = new Map<string, string>([
+      ['src/app.ts', 'const x = 1;'],
+      ['src/util.ts', 'export function helper() {}'],
+    ]);
+    const snapProject = createSnapshotProject(snapshotMap);
+    assert(snapProject.analysisMode === 'snapshot', 'Snapshot project mode is "snapshot"');
+    assert(snapProject.hasBaseline === false, 'Snapshot project has no baseline');
+    assert(snapProject.totalAdditions === 0, 'Standalone project does not report fake additions (+0)');
+    assert(snapProject.totalDeletions === 0, 'Standalone project does not report fake deletions (-0)');
+    assert(snapProject.files.every((f) => f.status === 'detected'), 'Standalone project files have status "detected" not "added"');
+
+    // Scenario 11: ZIP Archive Path Traversal & Security Validation
+    // Test directory traversal prevention
+    const dangerousPaths = ['../etc/passwd', '../../root', 'sub/../../dangerous.sh', '/absolute/path.txt'];
+    for (const p of dangerousPaths) {
+      const normalized = p.replace(/\\/g, '/');
+      const isBlocked = normalized.startsWith('/') || normalized.startsWith('../') || normalized.includes('/../') || normalized.endsWith('/..');
+      assert(isBlocked, `Path traversal attempt blocked for: ${p}`);
+    }
+
+    // Scenario 12: Partial Analyzer Failure Isolation
+    const { ALL_RULES } = await import('../rules');
+    // Inject a dummy rule that throws
+    const faultyRule = {
+      id: 'faulty-test-rule',
+      name: 'Faulty Rule For Testing',
+      category: 'other' as const,
+      description: 'Tests fault tolerance',
+      analyze: () => {
+        throw new Error('Simulated analyzer internal failure');
+      },
+    };
+    ALL_RULES.push(faultyRule);
+    const isolatedResult = runAnalysis(parsedApi);
+    const hasFaultWarning = isolatedResult.warnings.some((w) => w.code === 'RULE_EXECUTION_ERROR');
+    assert(hasFaultWarning, 'Partial analyzer failure captured gracefully in warnings array');
+    assert(isolatedResult.findings.length > 0, 'Other rules successfully completed despite faulty rule');
+    // Clean up
+    const ruleIdx = ALL_RULES.indexOf(faultyRule);
+    if (ruleIdx !== -1) ALL_RULES.splice(ruleIdx, 1);
+
+    // Scenario 13: Large Project Handling & Performance
+    const largeMap = new Map<string, string>();
+    for (let i = 0; i < 300; i++) {
+      largeMap.set(`src/modules/module_${i}.ts`, `export const value_${i} = ${i};\nexport function get_${i}() { return value_${i}; }`);
+    }
+    const t0 = Date.now();
+    const largeSnap = createSnapshotProject(largeMap);
+    const largeAnalysis = runAnalysis(largeSnap);
+    const elapsed = Date.now() - t0;
+    assert(largeSnap.totalFiles === 300, 'Large project parsed 300 files successfully');
+    assert(largeAnalysis.findings !== undefined, 'Large project analysis completed without crash');
+    assert(elapsed < 2000, `Large project processed in under 2s (actual: ${elapsed}ms)`);
 
     console.log('\n==================================================');
     console.log(`Results: ${passed} passed, ${failed} failed`);

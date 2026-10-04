@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Download, Copy, Check, X, FileText, Code2, AlignLeft, Globe } from 'lucide-react';
-import { DiffGuardReport } from '../../types/report';
+import { ImpactCheckReport } from '../../types/report';
 import {
   generateMarkdownReport,
   generatePlainTextReport,
@@ -11,7 +11,7 @@ import {
 interface ExportModalProps {
   isOpen: boolean;
   onClose: () => void;
-  report: DiffGuardReport | null;
+  report: ImpactCheckReport | null;
 }
 
 export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, report }) => {
@@ -65,16 +65,16 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, repor
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     switch (format) {
       case 'markdown':
-        downloadFile(currentContent, `diffguard-report-${timestamp}.md`, 'text/markdown');
+        downloadFile(currentContent, `impactcheck-report-${timestamp}.md`, 'text/markdown');
         break;
       case 'html':
-        downloadFile(currentContent, `diffguard-report-${timestamp}.html`, 'text/html');
+        downloadFile(currentContent, `impactcheck-report-${timestamp}.html`, 'text/html');
         break;
       case 'json':
-        downloadFile(currentContent, `diffguard-report-${timestamp}.json`, 'application/json');
+        downloadFile(currentContent, `impactcheck-report-${timestamp}.json`, 'application/json');
         break;
       case 'text':
-        downloadFile(currentContent, `diffguard-report-${timestamp}.txt`, 'text/plain');
+        downloadFile(currentContent, `impactcheck-report-${timestamp}.txt`, 'text/plain');
         break;
     }
   };

@@ -61,7 +61,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <div className="flex items-center gap-2">
             <Settings className="h-4 w-4 text-neutral-600 dark:text-neutral-400" />
             <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-              DiffGuard Settings
+              ImpactCheck Settings
             </h3>
           </div>
           <button

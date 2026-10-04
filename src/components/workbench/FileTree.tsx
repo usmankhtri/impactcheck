@@ -85,25 +85,38 @@ export const FileTree: React.FC<FileTreeProps> = ({
     switch (status) {
       case 'added':
         return (
-          <span className="text-[10px] font-mono px-1 py-0.2 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-400 rounded font-semibold">
+          <span className="text-[10px] font-mono px-1 py-0.2 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-400 rounded font-semibold" title="Added file">
             A
           </span>
         );
       case 'deleted':
         return (
-          <span className="text-[10px] font-mono px-1 py-0.2 bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-400 rounded font-semibold">
+          <span className="text-[10px] font-mono px-1 py-0.2 bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-400 rounded font-semibold" title="Deleted file">
             D
           </span>
         );
       case 'renamed':
         return (
-          <span className="text-[10px] font-mono px-1 py-0.2 bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-400 rounded font-semibold">
+          <span className="text-[10px] font-mono px-1 py-0.2 bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-400 rounded font-semibold" title="Renamed file">
             R
           </span>
         );
+      case 'detected':
+        return (
+          <span className="text-[10px] font-mono px-1 py-0.2 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded font-medium" title="Snapshot file">
+            FILE
+          </span>
+        );
+      case 'unchanged':
+        return (
+          <span className="text-[10px] font-mono px-1 py-0.2 bg-neutral-100 dark:bg-neutral-850 text-neutral-500 rounded" title="Unchanged file">
+            —
+          </span>
+        );
+      case 'modified':
       default:
         return (
-          <span className="text-[10px] font-mono px-1 py-0.2 bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-400 rounded font-semibold">
+          <span className="text-[10px] font-mono px-1 py-0.2 bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-400 rounded font-semibold" title="Modified file">
             M
           </span>
         );
@@ -287,8 +300,16 @@ export const FileTree: React.FC<FileTreeProps> = ({
                   )}
 
                   <div className="flex items-center gap-2 mt-1 text-[10px] font-mono text-neutral-500">
-                    <span className="text-emerald-600 dark:text-emerald-400">+{file.additions}</span>
-                    <span className="text-rose-600 dark:text-rose-400">-{file.deletions}</span>
+                    {file.status === 'detected' ? (
+                      <span className="text-neutral-500 dark:text-neutral-400">
+                        {file.linesAnalyzed || (file.hunks[0]?.newLines) || 0} lines
+                      </span>
+                    ) : (
+                      <>
+                        <span className="text-emerald-600 dark:text-emerald-400">+{file.additions}</span>
+                        <span className="text-rose-600 dark:text-rose-400">-{file.deletions}</span>
+                      </>
+                    )}
                   </div>
                 </div>
               </button>

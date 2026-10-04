@@ -120,15 +120,21 @@ export const SummaryBar: React.FC<SummaryBarProps> = ({
               </span>
             </div>
 
-            {/* Line delta counters */}
-            <div className="flex items-center gap-1 font-mono text-[11px] tabular-nums shrink-0">
-              <span className="text-emerald-600 dark:text-emerald-400 font-bold">
-                +{parsedDiff.totalAdditions}
+            {/* Line delta counters / Snapshot indicator */}
+            {parsedDiff.analysisMode === 'snapshot' || parsedDiff.hasBaseline === false ? (
+              <span className="text-[11px] font-mono text-neutral-500 bg-neutral-100 dark:bg-neutral-850 px-1.5 py-0.5 rounded font-medium">
+                Snapshot ({parsedDiff.totalLinesAnalyzed || 0} lines)
               </span>
-              <span className="text-rose-600 dark:text-rose-400 font-bold">
-                -{parsedDiff.totalDeletions}
-              </span>
-            </div>
+            ) : (
+              <div className="flex items-center gap-1 font-mono text-[11px] tabular-nums shrink-0">
+                <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                  +{parsedDiff.totalAdditions}
+                </span>
+                <span className="text-rose-600 dark:text-rose-400 font-bold">
+                  -{parsedDiff.totalDeletions}
+                </span>
+              </div>
+            )}
 
             {/* Findings summary count */}
             {summary && (

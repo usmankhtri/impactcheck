@@ -31,12 +31,12 @@ import {
   downloadFile,
 } from '../services/reportExporter';
 import { EXAMPLES } from '../examples';
-import { DiffGuardReport } from '../types/report';
+import { ImpactCheckReport } from '../types/report';
 
 export const ReportPage: React.FC = () => {
   const navigate = useNavigate();
   const { success } = useToast();
-  const [report, setReport] = useState<DiffGuardReport | null>(null);
+  const [report, setReport] = useState<ImpactCheckReport | null>(null);
   const [activeTab, setActiveTab] = useState<'all' | 'findings' | 'files' | 'dependencies' | 'checklist'>('all');
 
   useEffect(() => {
@@ -71,14 +71,14 @@ export const ReportPage: React.FC = () => {
   const handleDownloadMarkdown = () => {
     if (!report) return;
     const md = generateMarkdownReport(report);
-    downloadFile(md, 'diffguard-impact-report.md', 'text/markdown');
+    downloadFile(md, 'impactcheck-impact-report.md', 'text/markdown');
     success('Report downloaded as Markdown');
   };
 
   const handleDownloadJson = () => {
     if (!report) return;
     const jsonStr = JSON.stringify(report, null, 2);
-    downloadFile(jsonStr, 'diffguard-report.json', 'application/json');
+    downloadFile(jsonStr, 'impactcheck-report.json', 'application/json');
     success('Report downloaded as JSON');
   };
 

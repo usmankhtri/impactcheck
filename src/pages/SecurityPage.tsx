@@ -3,11 +3,9 @@ import { Link } from 'react-router-dom';
 import {
   ShieldCheck,
   HardDrive,
-  FileCode2,
   Lock,
   AlertTriangle,
   FolderArchive,
-  ArrowRight,
   Database,
 } from 'lucide-react';
 import { Header } from '../components/common/Header';
@@ -24,10 +22,10 @@ export const SecurityPage: React.FC = () => {
             Security Architecture
           </span>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-950 dark:text-white mt-1">
-            Security Model & Guarantees
+            Security Model &amp; Guarantees
           </h1>
           <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 mt-2 leading-relaxed">
-            DiffGuard is designed with an adversarial posture toward inputs: all analyzed files are treated as untrusted data, and no code is ever executed.
+            ImpactCheck is designed with an adversarial posture toward inputs: all analyzed files are treated as untrusted data, and no code is ever executed.
           </p>
         </div>
 
@@ -50,7 +48,7 @@ export const SecurityPage: React.FC = () => {
               <span>Zero Code Execution</span>
             </div>
             <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
-              DiffGuard does not execute JavaScript, TypeScript, Python, shell scripts, or build lifecycle hooks (<code className="font-mono">npm postinstall</code>) from uploaded files.
+              ImpactCheck does not execute JavaScript, TypeScript, Python, shell scripts, or build lifecycle hooks (<code className="font-mono">npm postinstall</code>) from uploaded files.
             </p>
           </div>
 
@@ -58,7 +56,7 @@ export const SecurityPage: React.FC = () => {
           <div className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#111419] space-y-2">
             <div className="flex items-center gap-2 font-semibold text-neutral-900 dark:text-neutral-100">
               <FolderArchive className="h-4 w-4 text-neutral-700 dark:text-neutral-300" />
-              <span>ZIP Handling & Path Traversal</span>
+              <span>ZIP Handling &amp; Path Traversal</span>
             </div>
             <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
               ZIP archives are processed in browser memory with strict path normalization. Entries containing directory traversal sequences (<code className="font-mono">../</code>) or absolute paths are rejected to prevent Zip-Slip vulnerabilities.
@@ -81,10 +79,10 @@ export const SecurityPage: React.FC = () => {
         <section className="p-5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-[#111419] space-y-3 text-xs">
           <div className="flex items-center gap-2 font-semibold text-sm text-neutral-900 dark:text-neutral-100">
             <HardDrive className="h-4 w-4 text-neutral-700 dark:text-neutral-300" />
-            <span>Browser Local Storage & Clearing</span>
+            <span>Browser Local Storage &amp; Clearing</span>
           </div>
           <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
-            DiffGuard uses your browser's <code className="font-mono">localStorage</code> solely to preserve recent analysis snapshots and user preferences. No cookies, trackers, or external database persistence are involved. You can purge all stored history at any time from the <Link to="/settings" className="underline font-medium text-neutral-900 dark:text-neutral-100">Settings page</Link> or by clearing browser site data.
+            ImpactCheck uses your browser&apos;s <code className="font-mono">localStorage</code> solely to preserve recent analysis snapshots and user preferences. No cookies, trackers, or external database persistence are involved. You can purge all stored history at any time from the <Link to="/settings" className="underline font-medium text-neutral-900 dark:text-neutral-100">Settings page</Link> or by clearing browser site data.
           </p>
         </section>
 
@@ -92,10 +90,10 @@ export const SecurityPage: React.FC = () => {
         <section className="p-5 rounded-xl border border-amber-200 dark:border-amber-900/60 bg-amber-50/20 dark:bg-amber-950/20 space-y-2 text-xs">
           <div className="flex items-center gap-2 font-semibold text-amber-800 dark:text-amber-300">
             <AlertTriangle className="h-4 w-4 shrink-0" />
-            <span>Heuristic Static Analysis Scope & Limitations</span>
+            <span>Heuristic Static Analysis Scope &amp; Limitations</span>
           </div>
           <p className="text-neutral-700 dark:text-neutral-300 leading-relaxed">
-            DiffGuard provides heuristic code review recommendations. It does not replace formal application security penetration tests, fuzz testing, compiler type checks, or unit test suites. Findings highlight code boundaries that warrant human inspection, but cannot guarantee the absence of runtime bugs or vulnerabilities.
+            ImpactCheck provides heuristic code review recommendations. It does not replace formal application security penetration tests, fuzz testing, compiler type checks, or unit test suites. Findings highlight code boundaries that warrant human inspection, but cannot guarantee the absence of runtime bugs or vulnerabilities.
           </p>
         </section>
       </main>

@@ -1,6 +1,6 @@
 {
-  "name": "DiffGuard",
-  "description": "Developer review assistant that analyzes Git diffs and highlights potential impact before you merge.",
+  "name": "ImpactCheck",
+  "description": "Understand what your code changes could affect before you merge.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

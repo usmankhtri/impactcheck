@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, ArrowRight, Cpu, Layers, GitBranch, Target } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Header } from '../components/common/Header';
 import { Footer } from '../components/common/Footer';
 
@@ -15,10 +15,10 @@ export const AboutPage: React.FC = () => {
             Product Philosophy
           </span>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-950 dark:text-white mt-1">
-            About DiffGuard
+            About ImpactCheck
           </h1>
           <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 mt-2 leading-relaxed">
-            DiffGuard was created to answer one practical question before merging: "What concrete system boundaries could this changeset impact?"
+            ImpactCheck was created to answer one practical question before merging: &ldquo;Understand what your code changes could affect before you merge.&rdquo;
           </p>
         </div>
 
@@ -36,13 +36,13 @@ export const AboutPage: React.FC = () => {
             </p>
           </section>
 
-          {/* 2. What DiffGuard Does */}
+          {/* 2. What ImpactCheck Does */}
           <section className="p-5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#111419] space-y-3">
             <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
               Deterministic Static Review Intelligence
             </h2>
             <p>
-              DiffGuard analyzes changesets using deterministic static heuristics. Rather than generating vague prose or hallucinated security warnings, it normalizes code structures and evaluates concrete patterns:
+              ImpactCheck analyzes changesets using deterministic static heuristics. Rather than generating vague prose or hallucinated security warnings, it normalizes code structures and evaluates concrete patterns:
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
               <div className="p-3 rounded-lg bg-neutral-50 dark:bg-neutral-900/60 border border-neutral-100 dark:border-neutral-800/80">
@@ -52,7 +52,7 @@ export const AboutPage: React.FC = () => {
                 </p>
               </div>
               <div className="p-3 rounded-lg bg-neutral-50 dark:bg-neutral-900/60 border border-neutral-100 dark:border-neutral-800/80">
-                <div className="font-semibold text-neutral-900 dark:text-neutral-100">Schema & Migration Safety</div>
+                <div className="font-semibold text-neutral-900 dark:text-neutral-100">Schema &amp; Migration Safety</div>
                 <p className="text-[11px] text-neutral-500 mt-1">
                   Correlates destructive SQL keywords (DROP TABLE, DROP COLUMN, TRUNCATE) into unified, actionable review findings.
                 </p>
@@ -75,10 +75,10 @@ export const AboutPage: React.FC = () => {
           {/* 3. Who It Is For */}
           <section className="p-5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#111419] space-y-2">
             <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-              Who DiffGuard is For
+              Who ImpactCheck is For
             </h2>
             <p>
-              DiffGuard is built for software engineers, tech leads, and code reviewers who want more context before merging code into staging or production branches. It works seamlessly for quick local audits before opening a pull request, or as an in-depth review companion during peer review.
+              ImpactCheck is built for software engineers, tech leads, and code reviewers who want more context before merging code into staging or production branches. It works seamlessly for quick local audits before opening a pull request, or as an in-depth review companion during peer review.
             </p>
           </section>
         </div>

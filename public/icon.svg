@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" rx="112" fill="#090a0f"/>
+  <rect x="8" y="8" width="496" height="496" rx="104" stroke="#27272a" stroke-width="12"/>
+  
+  <!-- Subtle inner ambient grid / code brackets mark -->
+  <path d="M128 176L88 256L128 336" stroke="#3f3f46" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M384 176L424 256L384 336" stroke="#3f3f46" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- ImpactCheck Central Bold Checkmark -->
+  <path d="M152 268L236 352L376 172" stroke="#fafafa" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Impact Focal Point -->
+  <circle cx="368" cy="352" r="26" fill="#a1a1aa"/>
+</svg>

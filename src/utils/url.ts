@@ -1,9 +1,9 @@
 /**
- * Centralized public URL and document metadata resolution for DiffGuard.
- * Production canonical origin: https://diffguardapp.vercel.app
+ * Centralized public URL and document metadata resolution for ImpactCheck.
+ * Production canonical origin: https://impactchange.vercel.app
  */
 
-export const DEFAULT_PRODUCTION_URL = 'https://diffguardapp.vercel.app';
+export const DEFAULT_PRODUCTION_URL = 'https://impactchange.vercel.app';
 
 export function getAppUrl(path = ''): string {
   let origin = '';
@@ -36,69 +36,69 @@ interface PageMetaConfig {
 
 const PAGE_METADATA: Record<string, PageMetaConfig> = {
   '/': {
-    title: 'DiffGuard — Code Change Impact Analysis',
-    description: 'Understand what your code changes could affect. Analyze diffs and project changes across APIs, dependencies, configuration, databases, authentication, and tests before merging.',
+    title: 'ImpactCheck — Understand what your code changes could affect before you merge',
+    description: 'Understand what your code changes could affect before you merge. Analyze diffs and project changes across APIs, dependencies, configuration, databases, authentication, and tests.',
     robots: 'index, follow',
   },
   '/docs': {
-    title: 'DiffGuard Documentation — Technical Review Guide',
-    description: 'Comprehensive guide to DiffGuard static analysis heuristics, input methods, change map relationships, and report exports.',
+    title: 'ImpactCheck Documentation — Technical Review Guide',
+    description: 'Comprehensive guide to ImpactCheck static analysis heuristics, input methods, change map relationships, and report exports.',
     robots: 'index, follow',
   },
   '/security': {
-    title: 'DiffGuard Security Model — Local-First Code Safety',
-    description: 'Learn how DiffGuard processes untrusted project files with zero code execution, sandboxed browser analysis, and safe ZIP extraction.',
+    title: 'ImpactCheck Security Model — Local-First Code Safety',
+    description: 'Learn how ImpactCheck processes untrusted project files with zero code execution, sandboxed browser analysis, and safe ZIP extraction.',
     robots: 'index, follow',
   },
   '/privacy': {
-    title: 'DiffGuard Privacy Policy — Client-Side Processing Guarantees',
+    title: 'ImpactCheck Privacy Policy — Client-Side Processing Guarantees',
     description: 'Client-side processing guarantees, local browser storage details, and transparent minimal OSV network lookups.',
     robots: 'index, follow',
   },
   '/about': {
-    title: 'About DiffGuard — Code Review Intelligence',
-    description: 'Learn why DiffGuard was built, what engineering challenges it solves, and how its deterministic analysis engine works.',
+    title: 'About ImpactCheck — Code Review Intelligence',
+    description: 'Learn why ImpactCheck was built, what engineering challenges it solves, and how its deterministic analysis engine works.',
     robots: 'index, follow',
   },
 
   // Private application workspaces and internal views (prevent search-engine indexing)
   '/app': {
-    title: 'DiffGuard — Analysis Workbench',
+    title: 'ImpactCheck — Analysis Workbench',
     description: 'Interactive code change review workbench with structured route analysis, breaking change watchlists, and dependency auditing.',
     robots: 'noindex, nofollow',
   },
   '/app/analyze': {
-    title: 'DiffGuard — Analysis Workbench',
+    title: 'ImpactCheck — Analysis Workbench',
     description: 'Interactive code change review workbench with structured route analysis, breaking change watchlists, and dependency auditing.',
     robots: 'noindex, nofollow',
   },
   '/report': {
-    title: 'DiffGuard — Impact Analysis Report',
+    title: 'ImpactCheck — Impact Analysis Report',
     description: 'Detailed code review impact report with prioritized findings, change signatures, and verification checklists.',
     robots: 'noindex, nofollow',
   },
   '/app/report': {
-    title: 'DiffGuard — Impact Analysis Report',
+    title: 'ImpactCheck — Impact Analysis Report',
     description: 'Detailed code review impact report with prioritized findings, change signatures, and verification checklists.',
     robots: 'noindex, nofollow',
   },
   '/history': {
-    title: 'DiffGuard — Analysis History',
+    title: 'ImpactCheck — Analysis History',
     description: 'Reopen recent project analyses stored locally in browser storage.',
     robots: 'noindex, nofollow',
   },
   '/app/history': {
-    title: 'DiffGuard — Analysis History',
+    title: 'ImpactCheck — Analysis History',
     description: 'Reopen recent project analyses stored locally in browser storage.',
     robots: 'noindex, nofollow',
   },
   '/settings': {
-    title: 'DiffGuard — Settings',
+    title: 'ImpactCheck — Settings',
     description: 'Configure analysis preferences, diff display modes, and developer keyboard shortcuts.',
     robots: 'noindex, nofollow',
   },
   '/app/settings': {
-    title: 'DiffGuard — Settings',
+    title: 'ImpactCheck — Settings',
     description: 'Configure analysis preferences, diff display modes, and developer keyboard shortcuts.',
     robots: 'noindex, nofollow',
   },
@@ -113,7 +113,7 @@ export function syncDocumentMetadata(pathname = typeof window !== 'undefined' ? 
 
   const currentUrl = getAppUrl(pathname);
   const meta = PAGE_METADATA[pathname] || {
-    title: 'DiffGuard — Page Not Found',
+    title: 'ImpactCheck — Page Not Found',
     description: 'The requested route does not exist.',
     robots: 'noindex, nofollow',
   };
@@ -184,7 +184,7 @@ export function syncDocumentMetadata(pathname = typeof window !== 'undefined' ? 
     try {
       const data = JSON.parse(jsonLdScript.textContent);
       data.url = getAppUrl('');
-      data.name = 'DiffGuard';
+      data.name = 'ImpactCheck';
       data.description = meta.description;
       jsonLdScript.textContent = JSON.stringify(data, null, 2);
     } catch {

@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" fill="none">
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#090a0f"/>
+
+  <!-- Subtle grid pattern -->
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#18181b" stroke-width="0.75"/>
+    </pattern>
+    <radialGradient id="glow" cx="600" cy="315" r="500" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#27272a" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#090a0f" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#grid)"/>
+  <circle cx="600" cy="315" r="500" fill="url(#glow)"/>
+
+  <!-- Outer container card -->
+  <rect x="80" y="75" width="1040" height="480" rx="24" fill="#0f1117" stroke="#27272a" stroke-width="1.5"/>
+
+  <!-- Logo Mark -->
+  <rect x="140" y="140" width="80" height="80" rx="18" fill="#090a0f" stroke="#3f3f46" stroke-width="2"/>
+  <path d="M160 180L174 194L202 162" stroke="#fafafa" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="200" cy="194" r="4.5" fill="#a1a1aa"/>
+
+  <!-- Title -->
+  <text x="244" y="196" font-family="Poppins, -apple-system, sans-serif" font-size="44" font-weight="700" fill="#ffffff" letter-spacing="-1">Impact<tspan font-weight="400" fill="#a1a1aa">Check</tspan></text>
+
+  <!-- Tagline -->
+  <text x="140" y="278" font-family="Poppins, -apple-system, sans-serif" font-size="34" font-weight="600" fill="#f4f4f5" letter-spacing="-0.5">
+    Understand what your code changes could affect before you merge.
+  </text>
+
+  <!-- Subtitle -->
+  <text x="140" y="328" font-family="Poppins, -apple-system, sans-serif" font-size="20" font-weight="400" fill="#a1a1aa">
+    Deterministic review companion analyzing APIs, dependencies, configuration, databases, authentication &amp; tests.
+  </text>
+
+  <!-- Metric Badges Row -->
+  <g transform="translate(140, 380)">
+    <rect x="0" y="0" width="160" height="46" rx="8" fill="#18181b" stroke="#27272a"/>
+    <text x="20" y="29" font-family="JetBrains Mono, monospace" font-size="14" fill="#e4e4e7">⚡ API Routes</text>
+
+    <rect x="176" y="0" width="180" height="46" rx="8" fill="#18181b" stroke="#27272a"/>
+    <text x="196" y="29" font-family="JetBrains Mono, monospace" font-size="14" fill="#e4e4e7">🛡️ Auth &amp; Perms</text>
+
+    <rect x="372" y="0" width="170" height="46" rx="8" fill="#18181b" stroke="#27272a"/>
+    <text x="392" y="29" font-family="JetBrains Mono, monospace" font-size="14" fill="#e4e4e7">📦 Dependencies</text>
+
+    <rect x="558" y="0" width="170" height="46" rx="8" fill="#18181b" stroke="#27272a"/>
+    <text x="578" y="29" font-family="JetBrains Mono, monospace" font-size="14" fill="#e4e4e7">🗄️ DB Migrations</text>
+  </g>
+
+  <!-- Bottom URL -->
+  <text x="140" y="495" font-family="JetBrains Mono, monospace" font-size="16" fill="#71717a">https://impactchange.vercel.app</text>
+  <text x="970" y="495" font-family="JetBrains Mono, monospace" font-size="16" fill="#71717a">Local-first • Zero-Execution</text>
+</svg>

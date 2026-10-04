@@ -1,5 +1,5 @@
 /**
- * DiffGuard Design Tokens
+ * ImpactCheck Design Tokens
  * Centralized design system definitions for consistent layout, surfaces, typography,
  * borders, shadows, and status colors across every public and application surface.
  */

@@ -2,7 +2,7 @@ import { ParsedDiff } from '../types/diff';
 import { Finding, FindingsSummary } from '../types/finding';
 import { DependencyChange } from '../types/dependency';
 import { ReviewChecklistItem } from '../types/checklist';
-import { DiffGuardReport } from '../types/report';
+import { ImpactCheckReport } from '../types/report';
 import { getAppUrl } from '../utils/url';
 
 export function buildReportObject(
@@ -11,7 +11,7 @@ export function buildReportObject(
   summary: FindingsSummary,
   dependencies: DependencyChange[],
   checklist: ReviewChecklistItem[]
-): DiffGuardReport {
+): ImpactCheckReport {
   const activeFindings = findings.filter((f) => !f.isDismissed);
   const completedChecklist = checklist.filter((c) => c.completed).length;
 
@@ -19,9 +19,9 @@ export function buildReportObject(
     version: '1.0.0',
     generatedAt: new Date().toISOString(),
     tool: {
-      name: 'DiffGuard',
+      name: 'ImpactCheck',
       version: '1.0.0',
-      description: 'Developer review assistant that analyzes Git diffs for potential impact.',
+      description: 'Understand what your code changes could affect before you merge.',
       url: getAppUrl(''),
     },
     summary: {
@@ -48,7 +48,7 @@ export function buildReportObject(
     dependencies,
     checklist,
     disclaimers: [
-      'DiffGuard provides deterministic static heuristics and recommendations for human code review.',
+      'ImpactCheck provides deterministic static heuristics and recommendations for human code review.',
       'Analysis results do not constitute a formal security audit or a guarantee of bug-free deployment.',
       'Test impact assessment is heuristic and based solely on files included in this diff.',
       'Vulnerability checks leverage the public OSV database; absence of an advisory does not guarantee security.',
@@ -56,10 +56,10 @@ export function buildReportObject(
   };
 }
 
-export function generateMarkdownReport(report: DiffGuardReport): string {
+export function generateMarkdownReport(report: ImpactCheckReport): string {
   const { summary, files, findings, dependencies, checklist, disclaimers } = report;
 
-  let md = `# DiffGuard Code Review Impact Report\n\n`;
+  let md = `# ImpactCheck Code Review Impact Report\n\n`;
   md += `**Generated**: ${new Date(report.generatedAt).toUTCString()}\n`;
   md += `**Tool**: ${report.tool.name} v${report.tool.version}${report.tool.url ? ` (${report.tool.url})` : ''}\n\n`;
 
@@ -153,10 +153,10 @@ export function generateMarkdownReport(report: DiffGuardReport): string {
   return md;
 }
 
-export function generatePlainTextReport(report: DiffGuardReport): string {
+export function generatePlainTextReport(report: ImpactCheckReport): string {
   const { summary, files, findings, checklist } = report;
   let text = `==================================================\n`;
-  text += `DIFFGUARD CODE REVIEW REPORT\n`;
+  text += `IMPACTCHECK CODE REVIEW REPORT\n`;
   text += `Generated: ${new Date(report.generatedAt).toUTCString()}\n`;
   text += `==================================================\n\n`;
 
@@ -191,7 +191,7 @@ function escapeHtml(str: string): string {
     .replace(/'/g, '&#039;');
 }
 
-export function generateHtmlReport(report: DiffGuardReport): string {
+export function generateHtmlReport(report: ImpactCheckReport): string {
   const { summary, files, findings, dependencies, checklist, disclaimers } = report;
 
   const findingsHtml = findings.length === 0
@@ -266,7 +266,7 @@ export function generateHtmlReport(report: DiffGuardReport): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DiffGuard Review Report</title>
+  <title>ImpactCheck Review Report</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.5; color: #0f172a; max-width: 900px; margin: 40px auto; padding: 0 24px; background: #ffffff; }
     h1 { font-size: 24px; margin-bottom: 4px; border-bottom: 2px solid #0f172a; padding-bottom: 12px; }
@@ -281,9 +281,9 @@ export function generateHtmlReport(report: DiffGuardReport): string {
   </style>
 </head>
 <body>
-  <h1>DiffGuard Review Impact Report</h1>
+  <h1>ImpactCheck Review Impact Report</h1>
   <div class="meta">
-    Generated on ${escapeHtml(new Date(report.generatedAt).toUTCString())} · DiffGuard v${escapeHtml(report.tool.version)}
+    Generated on ${escapeHtml(new Date(report.generatedAt).toUTCString())} · ImpactCheck v${escapeHtml(report.tool.version)}
   </div>
 
   <div class="metric-grid">

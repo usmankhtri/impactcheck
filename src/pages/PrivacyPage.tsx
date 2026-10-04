@@ -18,7 +18,7 @@ export const PrivacyPage: React.FC = () => {
             Privacy Policy
           </h1>
           <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 mt-2 leading-relaxed">
-            DiffGuard is designed with a privacy-first, local-execution architecture. We believe developer source code should not be sent to external servers for heuristic review.
+            ImpactCheck is designed with a privacy-first, local-execution architecture. We believe developer source code should not be sent to external servers for heuristic review.
           </p>
         </div>
 
@@ -46,10 +46,10 @@ export const PrivacyPage: React.FC = () => {
               <span>2. What May Leave the Browser</span>
             </div>
             <p>
-              DiffGuard includes an optional dependency vulnerability scanner. When this feature is active, DiffGuard queries the public Open Source Vulnerabilities (OSV) database (<code className="font-mono">api.osv.dev</code>).
+              ImpactCheck includes an optional dependency vulnerability scanner. When this feature is active, ImpactCheck queries the public Open Source Vulnerabilities (OSV) database (<code className="font-mono">api.osv.dev</code>).
             </p>
             <p className="text-neutral-600 dark:text-neutral-400">
-              This request contains <strong>only</strong> the package name, version, and ecosystem (for example, <code className="font-mono">"lodash", "4.17.21", "npm"</code>). No repository names, private source code, commit hashes, or author identities are ever transmitted. You can disable vulnerability lookups entirely in <Link to="/settings" className="underline font-medium text-neutral-950 dark:text-white">Settings</Link>.
+              This request contains <strong>only</strong> the package name, version, and ecosystem (for example, <code className="font-mono">&quot;lodash&quot;, &quot;4.17.21&quot;, &quot;npm&quot;</code>). No repository names, private source code, commit hashes, or author identities are ever transmitted. You can disable vulnerability lookups entirely in <Link to="/settings" className="underline font-medium text-neutral-950 dark:text-white">Settings</Link>.
             </p>
           </div>
 
@@ -60,7 +60,7 @@ export const PrivacyPage: React.FC = () => {
               <span>3. No Account Collection or Third-Party Tracking</span>
             </div>
             <p>
-              DiffGuard requires no account creation, no sign-in credentials, and does not sell or distribute user information. We do not embed behavioral advertising trackers or invasive telemetry scripts.
+              ImpactCheck requires no account creation, no sign-in credentials, and does not sell or distribute user information. We do not embed behavioral advertising trackers or invasive telemetry scripts.
             </p>
           </div>
 

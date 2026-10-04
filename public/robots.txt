@@ -1,4 +1,4 @@
-# Robots.txt for DiffGuard (https://diffguardapp.vercel.app/)
+# Robots.txt for ImpactCheck (https://impactchange.vercel.app/)
 User-agent: *
 Allow: /
 Allow: /docs
@@ -13,4 +13,4 @@ Disallow: /report
 Disallow: /history
 Disallow: /settings
 
-Sitemap: https://diffguardapp.vercel.app/sitemap.xml
+Sitemap: https://impactchange.vercel.app/sitemap.xml

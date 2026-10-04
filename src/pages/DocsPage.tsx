@@ -31,7 +31,7 @@ export const DocsPage: React.FC = () => {
     {
       title: 'Getting Started',
       items: [
-        { id: 'intro', label: 'What is DiffGuard?' },
+        { id: 'intro', label: 'What is ImpactCheck?' },
         { id: 'quickstart', label: 'Quick Start' },
         { id: 'understanding-findings', label: 'Understanding Findings' },
       ],
@@ -134,10 +134,10 @@ export const DocsPage: React.FC = () => {
                 Documentation
               </span>
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-950 dark:text-white">
-                DiffGuard Technical Guide
+                ImpactCheck Technical Guide
               </h1>
               <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                DiffGuard is a deterministic code review assistant designed to analyze changesets before merge. It inspects touched code boundaries across APIs, authentication guards, dependencies, database schemas, and test coverage to flag review focus areas.
+                ImpactCheck is a deterministic code review assistant designed to analyze changesets before merge. It inspects touched code boundaries across APIs, authentication guards, dependencies, database schemas, and test coverage to flag review focus areas.
               </p>
             </div>
 
@@ -193,21 +193,21 @@ export const DocsPage: React.FC = () => {
                   1. Project ZIP Archives
                 </h3>
                 <p>
-                  DiffGuard extracts ZIP files entirely in-browser using WebAssembly/JavaScript memory buffers. Built-in Zip-Slip path sanitization prevents directory traversal attacks, and files larger than 2MB or containing binary media are ignored to preserve browser performance.
+                  ImpactCheck extracts ZIP files entirely in-browser using WebAssembly/JavaScript memory buffers. Built-in Zip-Slip path sanitization prevents directory traversal attacks, and files larger than 2MB or containing binary media are ignored to preserve browser performance.
                 </p>
 
                 <h3 id="input-folders" className="font-semibold text-neutral-900 dark:text-neutral-100 pt-2">
                   2. Local Project Folders
                 </h3>
                 <p>
-                  Select a directory tree via the standard browser Directory API (<code className="font-mono">webkitdirectory</code>). DiffGuard automatically detects framework structure, primary languages, and filters out noise directories (<code className="font-mono">node_modules</code>, <code className="font-mono">dist</code>, <code className="font-mono">.git</code>).
+                  Select a directory tree via the standard browser Directory API (<code className="font-mono">webkitdirectory</code>). ImpactCheck automatically detects framework structure, primary languages, and filters out noise directories (<code className="font-mono">node_modules</code>, <code className="font-mono">dist</code>, <code className="font-mono">.git</code>).
                 </p>
 
                 <h3 id="input-compare" className="font-semibold text-neutral-900 dark:text-neutral-100 pt-2">
                   3. Comparing Before & After Folders
                 </h3>
                 <p>
-                  Provide two folders representing the "Before" baseline and "After" state. DiffGuard computes recursive file tree maps and generates line-level unified diffs using the Myers / Longest Common Subsequence (LCS) diffing algorithm.
+                  Provide two folders representing the "Before" baseline and "After" state. ImpactCheck computes recursive file tree maps and generates line-level unified diffs using the Myers / Longest Common Subsequence (LCS) diffing algorithm.
                 </p>
 
                 <h3 id="input-git-diff" className="font-semibold text-neutral-900 dark:text-neutral-100 pt-2">
@@ -237,7 +237,7 @@ export const DocsPage: React.FC = () => {
                     API Route & Contract Normalization
                   </h3>
                   <p>
-                    The API analyzer normalizes endpoints into structured records (HTTP method, path, middleware list). When a route retains its path and method but its middleware is altered, DiffGuard does NOT falsely report a route deletion and addition; instead, it detects structured middleware modifications.
+                    The API analyzer normalizes endpoints into structured records (HTTP method, path, middleware list). When a route retains its path and method but its middleware is altered, ImpactCheck does NOT falsely report a route deletion and addition; instead, it detects structured middleware modifications.
                   </p>
                 </div>
 
@@ -246,7 +246,7 @@ export const DocsPage: React.FC = () => {
                     Authentication vs. Authorization Separation
                   </h3>
                   <p>
-                    DiffGuard distinguishes identity validation (authentication: tokens, session cookies, password hashing) from access-control boundaries (authorization: role checks, admin guards, permission middleware). Changes touching permission guards are tagged under <code className="font-mono">authorization</code> with HIGH severity.
+                    ImpactCheck distinguishes identity validation (authentication: tokens, session cookies, password hashing) from access-control boundaries (authorization: role checks, admin guards, permission middleware). Changes touching permission guards are tagged under <code className="font-mono">authorization</code> with HIGH severity.
                   </p>
                 </div>
 
@@ -303,7 +303,7 @@ export const DocsPage: React.FC = () => {
                 Reports & Export Formats
               </h2>
               <p>
-                DiffGuard exports review summaries in multiple developer-friendly formats:
+                ImpactCheck exports review summaries in multiple developer-friendly formats:
               </p>
               <ul className="list-disc pl-4 space-y-1">
                 <li><strong className="text-neutral-900 dark:text-neutral-100">Markdown:</strong> Ready to paste directly into GitHub/GitLab pull requests or review comments.</li>
@@ -318,7 +318,7 @@ export const DocsPage: React.FC = () => {
                 Privacy & Security Architecture
               </h2>
               <p>
-                DiffGuard operates as a local-first browser workstation. Uploaded files are treated as untrusted data, zero code execution is performed, and only minimal package/version strings are transmitted when optional OSV queries are active. Review our full <Link to="/security" className="underline font-medium text-neutral-950 dark:text-white">Security Model</Link> and <Link to="/privacy" className="underline font-medium text-neutral-950 dark:text-white">Privacy Policy</Link>.
+                ImpactCheck operates as a local-first browser workstation. Uploaded files are treated as untrusted data, zero code execution is performed, and only minimal package/version strings are transmitted when optional OSV queries are active. Review our full <Link to="/security" className="underline font-medium text-neutral-950 dark:text-white">Security Model</Link> and <Link to="/privacy" className="underline font-medium text-neutral-950 dark:text-white">Privacy Policy</Link>.
               </p>
             </section>
           </article>

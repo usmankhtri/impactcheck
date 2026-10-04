@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ShieldCheck, Moon, Sun, Monitor, Github, Menu, X, ArrowRight } from 'lucide-react';
+import { Moon, Sun, Monitor, Github, Menu, X, ArrowRight } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import { ImpactCheckMark } from './ImpactCheckLogo';
 
 export const Header: React.FC = () => {
   const { theme, themeMode, setThemeMode, toggleTheme } = useTheme();
@@ -56,11 +57,9 @@ export const Header: React.FC = () => {
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
         {/* Brand Zone */}
         <Link to="/" className="flex items-center gap-2.5 group">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md border border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-[#181c24] text-neutral-900 dark:text-neutral-100 transition-colors group-hover:border-neutral-400 dark:group-hover:border-neutral-500 shadow-2xs">
-            <ShieldCheck className="h-4 w-4" />
-          </div>
+          <ImpactCheckMark size={24} />
           <span className="text-sm font-bold tracking-tight text-neutral-950 dark:text-white">
-            DiffGuard
+            Impact<span className="font-normal text-neutral-600 dark:text-neutral-400">Check</span>
           </span>
         </Link>
 
@@ -84,7 +83,7 @@ export const Header: React.FC = () => {
         {/* Desktop Actions */}
         <div className="hidden sm:flex items-center gap-2">
           <a
-            href="https://github.com/promptility/diffguard"
+            href="https://github.com/promptility/impactcheck"
             target="_blank"
             rel="noopener noreferrer"
             className="flex h-8 w-8 items-center justify-center rounded-md border border-neutral-200 dark:border-neutral-800 text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800/60 transition-colors"

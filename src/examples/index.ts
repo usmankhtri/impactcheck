@@ -186,7 +186,7 @@ index 1029384..5647382 100644
  # Project Documentation
  
 -Welcome to our project repository.
-+Welcome to the DiffGuard open documentation repository!
++Welcome to the ImpactCheck open documentation repository!
  
 -## Getting Started
 +## Quick Start
