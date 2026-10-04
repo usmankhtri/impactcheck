@@ -1,0 +1,16 @@
+# Robots.txt for DiffGuard (https://diffguardapp.vercel.app/)
+User-agent: *
+Allow: /
+Allow: /docs
+Allow: /security
+Allow: /privacy
+Allow: /about
+
+# Disallow indexing of private interactive workspace states
+Disallow: /app
+Disallow: /app/
+Disallow: /report
+Disallow: /history
+Disallow: /settings
+
+Sitemap: https://diffguardapp.vercel.app/sitemap.xml

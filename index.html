@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DiffGuard — Developer review assistant for Git diff impact analysis</title>
+    <meta name="description" content="Developer review assistant that analyzes Git diffs and highlights potential impact before you merge." />
+    <link rel="canonical" href="https://diffguard.dev/" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="DiffGuard" />
+    <meta property="og:url" content="https://diffguard.dev/" />
+    <meta property="og:title" content="DiffGuard — Developer review assistant for Git diff impact analysis" />
+    <meta property="og:description" content="Developer review assistant that analyzes Git diffs and highlights potential impact before you merge." />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="DiffGuard — Developer review assistant for Git diff impact analysis" />
+    <meta name="twitter:description" content="Developer review assistant that analyzes Git diffs and highlights potential impact before you merge." />
+
+    <!-- Fonts: Poppins for UI, JetBrains Mono for code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "DiffGuard",
+      "url": "https://diffguard.dev/",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "All",
+      "description": "Developer review assistant that analyzes Git diffs and highlights potential impact before you merge.",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      }
+    }
+    </script>
+
+    <!-- Early Theme Initialization to Prevent Flash of Wrong Theme -->
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('impactcheck_theme_mode') || localStorage.getItem('diffguard_theme_mode') || localStorage.getItem('diffguard_theme');
+          var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var isDark = saved === 'dark' || ((!saved || saved === 'system') && prefersDark);
+          var root = document.documentElement;
+          if (isDark) {
+            root.classList.add('dark');
+            root.classList.remove('light');
+            root.setAttribute('data-theme', 'dark');
+            root.style.colorScheme = 'dark';
+          } else {
+            root.classList.add('light');
+            root.classList.remove('dark');
+            root.setAttribute('data-theme', 'light');
+            root.style.colorScheme = 'light';
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body class="bg-background text-foreground antialiased selection:bg-neutral-800 selection:text-white dark:selection:bg-neutral-200 dark:selection:text-neutral-900 min-h-screen">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
