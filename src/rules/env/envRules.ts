@@ -16,7 +16,7 @@ interface EnvVarContext {
   snippet: string;
 }
 
-function parseEnvContext(lineContent: string, varName: string, lineNumber: number): EnvVarContext {
+function parseEnvContext(lineContent: string, varName: string, lineNumber: number, isSnapshot = false): EnvVarContext {
   // Check for logical OR fallback: process.env.VAR || 'default'
   const orFallbackMatch = lineContent.match(new RegExp(`(?:process\\.env|import\\.meta\\.env)\\.${varName}\\s*\\|\\|\\s*([^;,\\n\\)]+)`));
   // Check for nullish coalescing: process.env.VAR ?? 'default'
@@ -40,7 +40,7 @@ function parseEnvContext(lineContent: string, varName: string, lineNumber: numbe
     fallbackValue,
     isConditionalCheck,
     line: lineNumber,
-    snippet: `+ ${lineContent.trim()}`,
+    snippet: isSnapshot ? lineContent.trim() : `+ ${lineContent.trim()}`,
   };
 }
 
@@ -147,7 +147,7 @@ export const envRule: Rule = {
           while ((match = ENV_USAGE_REGEX.exec(line.content)) !== null) {
             const varName = match[1];
             if (!['NODE_ENV'].includes(varName) && !addedEnvVars.has(varName)) {
-              const context = parseEnvContext(line.content, varName, line.newLineNumber || hunk.newStart);
+              const context = parseEnvContext(line.content, varName, line.newLineNumber || hunk.newStart, isSnapshot);
               addedEnvVars.set(varName, context);
             }
           }
@@ -165,7 +165,7 @@ export const envRule: Rule = {
                 fallbackValue: fallback,
                 isConditionalCheck: false,
                 line: line.newLineNumber || hunk.newStart,
-                snippet: `${line.type === 'add' ? '+' : ' '} ${line.content.trim()}`,
+                snippet: isSnapshot ? line.content.trim() : `${line.type === 'add' ? '+' : ' '} ${line.content.trim()}`,
               });
             }
           }

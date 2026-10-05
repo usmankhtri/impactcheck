@@ -83,7 +83,7 @@ export const databaseRule: Rule = {
               evidence: {
                 filePath: file.newPath,
                 lineNumber,
-                snippet: `${line.type === 'add' ? '+' : ' '} ${line.content.trim()}`,
+                snippet: isSnapshot ? line.content.trim() : `${line.type === 'add' ? '+' : ' '} ${line.content.trim()}`,
                 changeType: isSnapshot ? 'file_status' : 'addition',
                 detectionSignals: signalLabels,
               },

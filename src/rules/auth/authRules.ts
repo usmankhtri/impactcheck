@@ -141,7 +141,7 @@ export const authRule: Rule = {
               evidence: {
                 filePath: file.newPath,
                 lineNumber,
-                snippet: `${line.type === 'add' ? '+' : line.type === 'delete' ? '-' : ' '} ${line.content.trim()}`,
+                snippet: isSnapshot ? line.content.trim() : `${line.type === 'add' ? '+' : line.type === 'delete' ? '-' : ' '} ${line.content.trim()}`,
                 changeType: isSnapshot ? 'file_status' : (line.type === 'add' ? 'addition' : 'deletion'),
                 detectionSignals: signalNames,
               },
