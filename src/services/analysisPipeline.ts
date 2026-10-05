@@ -256,9 +256,19 @@ export async function executeAnalysisPipeline(
     (parsedDiff.mode ? parsedDiff.mode : parsedDiff.analysisMode) ||
     (parsedDiff.hasBaseline === false ? 'snapshot' : 'comparison');
 
+  const calculateFileLines = (f: DiffFile): number => {
+    if (f.linesAnalyzed && f.linesAnalyzed > 0) return f.linesAnalyzed;
+    if (f.afterContent) return f.afterContent.split(/\r?\n/).length;
+    if (f.hunks && f.hunks.length > 0) {
+      return f.hunks.reduce((acc, h) => acc + h.lines.length, 0);
+    }
+    return f.additions + f.deletions;
+  };
+
   const totalLinesAnalyzed =
-    parsedDiff.totalLinesAnalyzed ||
-    parsedDiff.files.reduce((sum, f) => sum + (f.linesAnalyzed || f.additions + f.deletions), 0);
+    parsedDiff.totalLinesAnalyzed && parsedDiff.totalLinesAnalyzed > 0
+      ? parsedDiff.totalLinesAnalyzed
+      : parsedDiff.files.reduce((sum, f) => sum + calculateFileLines(f), 0);
 
   const warnings: AnalysisWarning[] = [...(parsedDiff.warnings || [])];
 

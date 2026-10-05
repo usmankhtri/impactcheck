@@ -109,14 +109,21 @@ export const FindingCard: React.FC<FindingCardProps> = ({
           )}
           {finding.evidence.afterSnippet && (
             <div className="p-2 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-[11px] leading-relaxed">
-              <span className="font-sans uppercase text-[10px] text-neutral-400 block mb-0.5">After:</span>
+              <span className="font-sans uppercase text-[10px] text-neutral-400 block mb-0.5">
+                {finding.evidence.beforeSnippet ? 'After:' : 'Detected code:'}
+              </span>
               <span className="break-all">{finding.evidence.afterSnippet}</span>
             </div>
           )}
           {finding.evidence.snippet && !finding.evidence.beforeSnippet && !finding.evidence.afterSnippet && (
-            <pre className="p-2 rounded bg-neutral-100 dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 text-[11px] overflow-x-auto">
-              {finding.evidence.snippet}
-            </pre>
+            <div>
+              <span className="font-sans uppercase text-[10px] text-neutral-400 block mb-0.5">
+                Code excerpt:
+              </span>
+              <pre className="p-2 rounded bg-neutral-100 dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 text-[11px] overflow-x-auto">
+                {finding.evidence.snippet}
+              </pre>
+            </div>
           )}
         </div>
       )}

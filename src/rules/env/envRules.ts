@@ -64,6 +64,7 @@ export const envRule: Rule = {
 
     // If this is an .env.example configuration template
     if (isEnvExample) {
+      if (isSnapshot) return findings; // Counted in Project Overview metadata in snapshot mode
       for (const hunk of file.hunks) {
         for (const line of hunk.lines) {
           if (line.type === 'add' || line.type === 'detected') {
@@ -84,7 +85,7 @@ export const envRule: Rule = {
                   filePath: file.newPath,
                   lineNumber: line.newLineNumber || hunk.newStart,
                   snippet: `${line.type === 'add' ? '+' : ' '} ${line.content.trim()}`,
-                  changeType: isSnapshot ? 'file_status' : 'addition',
+                  changeType: 'addition',
                 },
                 explanation: `Variable "${varName}" is declared as a configuration-template entry in ${file.newPath}. Template declarations document expected environment configuration keys without asserting whether production values are set.`,
                 suggestedAction: `Ensure local developer environments and deployment setups have values provided for "${varName}".`,
@@ -98,6 +99,7 @@ export const envRule: Rule = {
 
     // If this is an active .env file
     if (isEnvFile) {
+      if (isSnapshot) return findings; // Counted in Project Overview metadata in snapshot mode
       for (const hunk of file.hunks) {
         for (const line of hunk.lines) {
           if (line.type === 'add' || line.type === 'detected') {

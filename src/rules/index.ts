@@ -7,7 +7,8 @@ import {
 } from '../types/diff';
 import { Finding, FindingsSummary, FindingCategory, FindingPriority } from '../types/finding';
 import { Rule } from './types';
-import { apiRule } from './api/apiRules';
+import { apiRule, extractDetectedRoutes } from './api/apiRules';
+import type { DetectedRoute } from './api/apiRules';
 import { authRule } from './auth/authRules';
 import { envRule } from './env/envRules';
 import { databaseRule } from './database/databaseRules';
@@ -18,6 +19,9 @@ import { configRule } from './config/configRules';
 import { renameRule } from './renames/renameRules';
 import { DependencyChange } from '../types/dependency';
 import { correlateAndDeduplicateFindings } from './correlation';
+
+export type { DetectedRoute };
+export { extractDetectedRoutes };
 
 export const ALL_RULES: Rule[] = [
   apiRule,
@@ -34,6 +38,7 @@ export const ALL_RULES: Rule[] = [
 export interface AnalysisResult {
   findings: Finding[];
   dependencies: DependencyChange[];
+  routes: DetectedRoute[];
   summary: FindingsSummary;
   context: AnalysisContext;
   warnings: AnalysisWarning[];
@@ -60,9 +65,19 @@ export function runAnalysis(parsedDiff: ParsedDiff, options?: { mode?: AnalysisM
 
   const hasBaseline = effectiveMode !== 'snapshot';
 
+  const calculateFileLines = (f: DiffFile): number => {
+    if (f.linesAnalyzed && f.linesAnalyzed > 0) return f.linesAnalyzed;
+    if (f.afterContent) return f.afterContent.split(/\r?\n/).length;
+    if (f.hunks && f.hunks.length > 0) {
+      return f.hunks.reduce((acc, h) => acc + h.lines.length, 0);
+    }
+    return f.additions + f.deletions;
+  };
+
   const totalLinesAnalyzed =
-    parsedDiff.totalLinesAnalyzed ||
-    parsedDiff.files.reduce((sum, f) => sum + (f.linesAnalyzed || f.additions + f.deletions), 0);
+    parsedDiff.totalLinesAnalyzed && parsedDiff.totalLinesAnalyzed > 0
+      ? parsedDiff.totalLinesAnalyzed
+      : parsedDiff.files.reduce((sum, f) => sum + calculateFileLines(f), 0);
 
   const warnings: AnalysisWarning[] = [...(parsedDiff.warnings || [])];
 
@@ -115,6 +130,18 @@ export function runAnalysis(parsedDiff: ParsedDiff, options?: { mode?: AnalysisM
     });
   }
 
+  // Extract detected API routes for project overview
+  let routes: DetectedRoute[] = [];
+  try {
+    routes = extractDetectedRoutes(parsedDiff.files);
+  } catch (err) {
+    warnings.push({
+      code: 'ROUTE_PARSE_ERROR',
+      message: `Failed to extract routes: ${err instanceof Error ? err.message : String(err)}`,
+      recoverable: true,
+    });
+  }
+
   // Compute breakdown
   const byPriority: Record<FindingPriority, number> = {
     HIGH: 0,
@@ -147,6 +174,7 @@ export function runAnalysis(parsedDiff: ParsedDiff, options?: { mode?: AnalysisM
   return {
     findings: uniqueFindings,
     dependencies,
+    routes,
     summary: {
       total: uniqueFindings.filter((f) => !f.isDismissed).length,
       totalSignals,

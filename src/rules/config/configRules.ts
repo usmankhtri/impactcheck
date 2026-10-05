@@ -26,6 +26,11 @@ export const configRule: Rule = {
     if (file.isBinary || file.isLockfile) return findings;
 
     const isSnapshot = mode === 'snapshot';
+    if (isSnapshot) {
+      // In snapshot mode, configuration files are recognized as project areas in Project Overview,
+      // rather than generating review findings simply because config files exist.
+      return findings;
+    }
 
     for (const item of CONFIG_PATTERNS) {
       if (item.pattern.test(file.newPath)) {

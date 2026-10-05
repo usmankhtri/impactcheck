@@ -360,52 +360,8 @@ export const dependencyRule: Rule = {
     const changes = extractDependencyChanges([file], mode);
 
     if (isSnapshot) {
-      // In snapshot mode, provide contextual dependency findings:
-      // If there are many dependencies, provide a grouped summary observation to avoid flooding
-      if (changes.length > 5) {
-        findings.push({
-          id: `dep-manifest-detected-${file.id}`,
-          ruleId: 'rule-dependency-manifest',
-          title: `Manifest dependencies detected: ${changes.length} packages declared in ${file.newPath}`,
-          category: 'dependencies',
-          priority: 'REVIEW',
-          confidence: 'HIGH',
-          changeType: 'Dependencies declared',
-          affectedFile: file.newPath,
-          changeSignature: `dep:manifest:${file.newPath}`,
-          detectionSignals: changes.map((c) => `${c.name}@${c.newVersion || 'latest'}`),
-          evidence: {
-            filePath: file.newPath,
-            changeType: 'file_status',
-            snippet: `${changes.length} dependencies declared in ${file.newPath}`,
-            detectionSignals: changes.slice(0, 10).map((c) => `${c.name}@${c.newVersion || 'latest'}`),
-          },
-          explanation: `Project manifest ${file.newPath} declares ${changes.length} dependencies (${changes.slice(0, 5).map((c) => c.name).join(', ')}${changes.length > 5 ? '...' : ''}).`,
-          suggestedAction: 'Audit dependencies for security advisories, vulnerability alerts, and licensing compliance.',
-        });
-      } else {
-        for (const change of changes) {
-          findings.push({
-            id: `dep-detected-${change.name}-${file.id}`,
-            ruleId: 'rule-dependency-manifest',
-            title: `Dependency detected: ${change.name} (${change.newVersion || 'latest'})`,
-            category: 'dependencies',
-            priority: 'REVIEW',
-            confidence: 'HIGH',
-            changeType: 'Declared dependency',
-            affectedFile: file.newPath,
-            changeSignature: `dep:${change.name}`,
-            evidence: {
-              filePath: file.newPath,
-              changeType: 'file_status',
-              snippet: `"${change.name}": "${change.newVersion || 'latest'}"`,
-              afterSnippet: `${change.name}@${change.newVersion || 'latest'}`,
-            },
-            explanation: `Manifest ${file.newPath} declares third-party dependency "${change.name}".`,
-            suggestedAction: 'Verify package license, security status, and compatibility with the project runtime.',
-          });
-        }
-      }
+      // In snapshot mode, dependencies are project metadata and are surfaced in Project Overview
+      // and the Dependency Overview section, rather than individual review findings.
       return findings;
     }
 

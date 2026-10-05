@@ -34,6 +34,11 @@ export const frontendRule: Rule = {
     if (file.isBinary || file.isLockfile) return findings;
 
     const isSnapshot = mode === 'snapshot';
+    if (isSnapshot) {
+      // In snapshot mode, frontend views and client files populate Project Overview,
+      // rather than generating review findings simply because frontend code exists.
+      return findings;
+    }
     const isApiClient = FRONTEND_CLIENT_PATTERNS.some((pat) => pat.test(file.newPath));
 
     if (isApiClient && (isSnapshot || file.additions > 0 || file.deletions > 0)) {

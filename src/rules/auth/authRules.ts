@@ -78,6 +78,12 @@ export const authRule: Rule = {
     if (file.isBinary || file.isLockfile) return findings;
 
     const isSnapshot = mode === 'snapshot';
+    if (isSnapshot) {
+      // In snapshot mode, authentication and authorization boundaries populate Project Overview
+      // metadata rather than generating noisy findings simply because security modules exist.
+      return findings;
+    }
+
     const isAuthFile = AUTH_FILE_PATTERNS.some((pat) => pat.test(file.newPath));
 
     for (const hunk of file.hunks) {

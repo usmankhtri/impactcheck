@@ -2,7 +2,8 @@ import { parseGitDiff } from '../parser/diffParser';
 import { runAnalysis } from '../rules';
 import { generateChecklistFromFindings } from '../services/checklistGenerator';
 import { buildReportObject, generateMarkdownReport } from '../services/reportExporter';
-import { computeLineDiff, compareFileMaps } from '../utils/diffGenerator';
+import { computeLineDiff, compareFileMaps, createSnapshotProject } from '../utils/diffGenerator';
+import { extractProjectOverview } from '../utils/projectOverview';
 import { executeAnalysisPipeline, AnalysisStageInfo } from '../services/analysisPipeline';
 import { EXAMPLES } from '../examples';
 
@@ -298,7 +299,7 @@ export default router;`;
     assert(!buildFinding, 'Regression check: "build" npm script key must NEVER be detected as a dependency');
     assert(!!vitestFinding && vitestFinding.newVersion === '^3.2.0', 'Actual devDependency "vitest" is correctly extracted');
 
-    // Regression Test (Part 7): Snapshot mode semantics must not claim changes without baseline
+    // Regression Test (Part 7): Snapshot mode semantics must not create noisy findings for routine code presence
     const snapshotDiff = `diff --git a/src/auth.ts b/src/auth.ts
 new file mode 100644
 --- /dev/null
@@ -311,10 +312,62 @@ new file mode 100644
     parsedSnapshot.mode = 'snapshot';
     const snapshotAnalysis = runAnalysis(parsedSnapshot);
     const snapAuthFinding = snapshotAnalysis.findings.find((f) => f.category === 'authorization');
-    assert(!!snapAuthFinding, 'Snapshot finding detected for auth code');
-    assert(!snapAuthFinding?.title.toLowerCase().includes('changed'), 'Snapshot mode must not claim authorization changed');
-    assert(!snapAuthFinding?.title.toLowerCase().includes('modified'), 'Snapshot mode must not claim authorization modified');
-    assert(Boolean(snapAuthFinding?.title.includes('Authorization-sensitive code detected')), 'Snapshot mode uses "Authorization-sensitive code detected"');
+    assert(!snapAuthFinding, 'Snapshot mode suppresses noisy findings for routine auth code presence');
+
+    // But meaningful conditions (like destructive SQL operations) DO create findings in snapshot mode:
+    const snapshotDbDiff = `diff --git a/migrations/001.sql b/migrations/001.sql
+new file mode 100644
+--- /dev/null
++++ b/migrations/001.sql
+@@ -0,0 +1,1 @@
++ALTER TABLE users DROP COLUMN phone;`;
+    const parsedDbSnapshot = parseGitDiff(snapshotDbDiff);
+    parsedDbSnapshot.analysisMode = 'snapshot';
+    parsedDbSnapshot.mode = 'snapshot';
+    const dbSnapAnalysis = runAnalysis(parsedDbSnapshot);
+    const dbFinding = dbSnapAnalysis.findings.find((f) => f.category === 'database');
+    assert(!!dbFinding && dbFinding.priority === 'HIGH', 'Snapshot mode creates HIGH finding for destructive DROP COLUMN');
+
+    // Regression Test (Part 8): Snapshot mode Project Understanding vs Review Findings rule
+    const projectFilesMap = new Map<string, string>([
+      ['package.json', JSON.stringify({ dependencies: { express: '^4.18.0', axios: '^1.4.0' } })],
+      ['src/routes.ts', `router.get('/:id', handler);\nrouter.post('/', createHandler);`],
+      ['src/auth.ts', `export function check() { return requireAdmin(); }`],
+      ['tsconfig.json', `{ "compilerOptions": { "strict": true } }`],
+      ['src/config.ts', `export const dbUrl = process.env.DATABASE_URL;`],
+      ['migrations/001.sql', `ALTER TABLE accounts DROP COLUMN phone;`],
+    ]);
+    const fullSnap = createSnapshotProject(projectFilesMap);
+    const fullSnapAnalysis = runAnalysis(fullSnap);
+
+    // Detections are extracted into Project Overview model
+    const overviewData = extractProjectOverview(fullSnap.files, fullSnapAnalysis.dependencies);
+    assert(overviewData.dependenciesCount === 2, `Project Overview extracted 2 dependencies, got ${overviewData.dependenciesCount}`);
+    assert(overviewData.apiRoutesCount === 2, `Project Overview extracted 2 API routes, got ${overviewData.apiRoutesCount}`);
+    assert(overviewData.authModulesCount === 1, `Project Overview extracted 1 auth module, got ${overviewData.authModulesCount}`);
+    assert(overviewData.configFilesCount >= 1, `Project Overview extracted config files, got ${overviewData.configFilesCount}`);
+    assert(overviewData.databaseMigrationsCount === 1, `Project Overview extracted 1 database migration, got ${overviewData.databaseMigrationsCount}`);
+    assert(overviewData.envVarsCount === 1, `Project Overview extracted 1 env var, got ${overviewData.envVarsCount}`);
+
+    // But ordinary project characteristics DO NOT become findings:
+    assert(!fullSnapAnalysis.findings.some(f => f.title.includes('express')), 'Normal dependency is NOT a review finding');
+    assert(!fullSnapAnalysis.findings.some(f => f.title.includes('GET /:id')), 'Normal API route is NOT a review finding');
+    assert(!fullSnapAnalysis.findings.some(f => f.title.includes('requireAdmin')), 'Normal auth function is NOT a review finding');
+    assert(!fullSnapAnalysis.findings.some(f => f.title.includes('Configuration file detected')), 'Normal config file is NOT a review finding');
+
+    // ONLY meaningful conditions become review findings:
+    const dropFinding = fullSnapAnalysis.findings.find(f => f.category === 'database');
+    const envFinding = fullSnapAnalysis.findings.find(f => f.category === 'configuration' && f.title.includes('DATABASE_URL'));
+    assert(!!dropFinding && dropFinding.priority === 'HIGH', 'Destructive DROP COLUMN is a HIGH finding in snapshot mode');
+    assert(!!envFinding && envFinding.priority === 'MEDIUM', 'Env var without fallback is a MEDIUM finding in snapshot mode');
+    assert(fullSnapAnalysis.findings.length === 2, `Total findings strictly filtered to 2 actionable conditions, got ${fullSnapAnalysis.findings.length}`);
+
+    // Report contains Project Areas Detected section in snapshot mode
+    const snapReportObj = buildReportObject(fullSnap, fullSnapAnalysis.findings, fullSnapAnalysis.summary, fullSnapAnalysis.dependencies, []);
+    const snapMarkdown = generateMarkdownReport(snapReportObj);
+    assert(snapMarkdown.includes('Project areas detected'), 'Snapshot markdown report includes "Project areas detected"');
+    assert(snapMarkdown.includes('2 dependencies'), 'Snapshot markdown report lists dependencies count');
+    assert(snapMarkdown.includes('2 API routes'), 'Snapshot markdown report lists API routes count');
 
     // Scenario 5: Authentication and authorization changes are distinguished
     const secDiff = `diff --git a/src/guards.ts b/src/guards.ts
@@ -359,7 +412,6 @@ new file mode 100644
     assert(Boolean(TOKENS.status.low.badge && TOKENS.status.low.border), 'Low severity status tokens are properly defined');
 
     // Scenario 10: Standalone Snapshot File State Correctness
-    const { createSnapshotProject } = await import('../utils/diffGenerator');
     const snapshotMap = new Map<string, string>([
       ['src/app.ts', 'const x = 1;'],
       ['src/util.ts', 'export function helper() {}'],
@@ -494,6 +546,140 @@ router.get('/api/v2/users', async (req, res) => {
       );
     }
     assert(pipelineErrorCaught, 'Pipeline rejects empty inputs with error state');
+
+    // Scenario 18: 15-File Real Project Snapshot Scenario
+    const fifteenFiles = new Map<string, string>([
+      ['package.json', JSON.stringify({
+        name: 'test-service',
+        dependencies: {
+          express: '^4.18.2',
+          axios: '^1.6.0',
+          zod: '^3.22.4',
+        },
+        devDependencies: {
+          vite: '^5.0.0',
+          vitest: '^1.0.0',
+        },
+      }, null, 2)],
+      ['src/routes/users.ts', `import express from 'express';
+const router = express.Router();
+router.get('/:id', (req, res) => res.json({ id: req.params.id }));
+router.post('/', (req, res) => res.json({ status: 'created' }));
+router.delete('/:id', (req, res) => res.json({ deleted: true }));
+export default router;`],
+      ['src/middleware/requireAuth.ts', `export function requireAuth(req, res, next) {
+  if (!req.headers.authorization) return res.status(401).send();
+  next();
+}`],
+      ['src/middleware/requireAdmin.ts', `export function requireAdmin(req, res, next) {
+  if (!req.user || req.user.role !== 'admin') return res.status(403).send();
+  next();
+}`],
+      ['vite.config.ts', `import { defineConfig } from 'vite';
+export default defineConfig({ server: { port: 3000 } });`],
+      ['tsconfig.json', `{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "strict": true
+  }
+}`],
+      ['.env.example', `PORT=3000
+DATABASE_URL=postgres://localhost:5432/app
+SECRET_KEY=replace-me`],
+      ['db/migrations/001_init.sql', `CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  phone VARCHAR(50)
+);`],
+      ['db/migrations/002_drop_col.sql', `ALTER TABLE users DROP COLUMN phone;`],
+      ['src/services/userService.ts', `const dbUrl = process.env.DATABASE_URL;
+export function getUserDb() {
+  return dbUrl;
+}`],
+      ['src/services/config.ts', `export const apiUrl = process.env.PUBLIC_API_URL || 'https://api.example.com';`],
+      ['src/index.ts', `import express from 'express';
+const app = express();
+app.listen(3000);`],
+      ['src/components/App.tsx', `import React from 'react';
+export const App = () => <div>User Dashboard</div>;`],
+      ['tests/users.test.ts', `import { test, expect } from 'vitest';
+test('basic sanity', () => { expect(1).toBe(1); });`],
+      ['README.md', `# Test Service
+Documentation for test service.`],
+    ]);
+
+    const fifteenSnap = createSnapshotProject(fifteenFiles);
+    assert(fifteenSnap.files.length === 15, 'Created snapshot with 15 files');
+    assert((fifteenSnap.totalLinesAnalyzed ?? 0) > 0, `Snapshot calculated real lines analyzed: ${fifteenSnap.totalLinesAnalyzed}`);
+
+    const fifteenAnalysis = runAnalysis(fifteenSnap);
+    const fifteenOverview = extractProjectOverview(fifteenSnap.files, fifteenAnalysis.dependencies);
+
+    // Verify project understanding model captured everything:
+    assert(fifteenOverview.totalFilesAnalyzed === 15, 'Overview lists 15 files analyzed');
+    assert(fifteenOverview.totalLinesAnalyzed === fifteenSnap.totalLinesAnalyzed, 'Overview lines analyzed matches total lines analyzed');
+    assert(fifteenOverview.totalLinesAnalyzed > 50, `Substantial line count analyzed: ${fifteenOverview.totalLinesAnalyzed}`);
+    assert(fifteenOverview.dependenciesCount === 5, `5 dependencies detected (express, axios, zod, vite, vitest), got ${fifteenOverview.dependenciesCount}`);
+    assert(fifteenOverview.apiRoutesCount === 3, `3 API routes detected, got ${fifteenOverview.apiRoutesCount}`);
+    assert(fifteenOverview.authModulesCount === 2, `2 auth modules detected, got ${fifteenOverview.authModulesCount}`);
+    assert(fifteenOverview.databaseMigrationsCount === 2, `2 migration files detected, got ${fifteenOverview.databaseMigrationsCount}`);
+    assert(fifteenOverview.frontendFilesCount === 1, `1 frontend area detected, got ${fifteenOverview.frontendFilesCount}`);
+    assert(fifteenOverview.testFilesCount === 1, `1 test file detected, got ${fifteenOverview.testFilesCount}`);
+    assert(fifteenOverview.configFilesCount >= 3, `Config files detected, got ${fifteenOverview.configFilesCount}`);
+
+    // Verify low-noise finding generation:
+    // None of the 5 dependencies should be findings:
+    assert(!fifteenAnalysis.findings.some(f => f.title.includes('express')), 'express is NOT a review finding');
+    assert(!fifteenAnalysis.findings.some(f => f.title.includes('axios')), 'axios is NOT a review finding');
+    assert(!fifteenAnalysis.findings.some(f => f.title.includes('zod')), 'zod is NOT a review finding');
+    assert(!fifteenAnalysis.findings.some(f => f.title.includes('vite')), 'vite is NOT a review finding');
+    assert(!fifteenAnalysis.findings.some(f => f.title.includes('vitest')), 'vitest is NOT a review finding');
+
+    // None of the routes should be findings:
+    assert(!fifteenAnalysis.findings.some(f => f.category === 'api'), 'Detected API routes are NOT review findings');
+
+    // Routine auth module presence should not be findings:
+    assert(!fifteenAnalysis.findings.some(f => f.category === 'authorization'), 'Routine auth modules are NOT review findings');
+
+    // Config files and migration file presence should not be findings:
+    assert(!fifteenAnalysis.findings.some(f => f.title.includes('Configuration file detected')), 'Configuration file presence is NOT a review finding');
+    assert(!fifteenAnalysis.findings.some(f => f.title.includes('Migration file detected')), 'Migration file presence is NOT a review finding');
+
+    // Meaningful conditions ARE surfaced:
+    const dropColFinding = fifteenAnalysis.findings.find(f => f.category === 'database' && f.title.includes('DROP COLUMN'));
+    assert(!!dropColFinding && dropColFinding.priority === 'HIGH', 'Destructive DROP COLUMN is a HIGH finding');
+
+    const envFallbackFinding = fifteenAnalysis.findings.find(f => f.category === 'configuration' && f.title.includes('DATABASE_URL'));
+    assert(!!envFallbackFinding && envFallbackFinding.priority === 'MEDIUM', 'Env var without fallback is a MEDIUM finding');
+
+    // Total findings count must be substantially lower than 18 (e.g. <= 4 findings):
+    assert(fifteenAnalysis.findings.length <= 4, `Finding count dropped substantially from 18 to ${fifteenAnalysis.findings.length}`);
+
+    // Verify Snapshot Report export semantics:
+    const report15 = buildReportObject(
+      fifteenSnap,
+      fifteenAnalysis.findings,
+      fifteenAnalysis.summary,
+      fifteenAnalysis.dependencies,
+      []
+    );
+    const md15 = generateMarkdownReport(report15);
+
+    assert(md15.includes('Project Overview'), 'Report uses "Project Overview"');
+    assert(md15.includes('Files analyzed: 15'), 'Report uses "Files analyzed: 15"');
+    assert(md15.includes(`Real lines analyzed: ${fifteenSnap.totalLinesAnalyzed}`), 'Report uses "Real lines analyzed" with accurate number');
+    assert(md15.includes('Analyzed Files'), 'Report uses "Analyzed Files"');
+    assert(md15.includes('Review Findings'), 'Report uses "Review Findings"');
+    assert(md15.includes('Dependency Overview'), 'Report uses "Dependency Overview"');
+    assert(md15.includes('API/Route Overview'), 'Report uses "API/Route Overview"');
+    assert(md15.includes('Limitations'), 'Report uses "Limitations"');
+
+    // Ensure snapshot report DOES NOT use diff language:
+    assert(!md15.includes('Files changed:'), 'Report does NOT say "Files changed:"');
+    assert(!md15.includes('Lines changed:'), 'Report does NOT say "Lines changed:"');
+    assert(!md15.includes('Diff excerpt'), 'Report does NOT say "Diff excerpt"');
+    assert(!md15.includes('**After**'), 'Report does NOT say "**After**"');
 
     console.log('\n==================================================');
     console.log(`Results: ${passed} passed, ${failed} failed`);

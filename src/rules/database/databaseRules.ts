@@ -98,47 +98,26 @@ export const databaseRule: Rule = {
       }
     }
 
-    // General migration file finding only if NO destructive SQL was flagged on this file
-    if (findings.length === 0) {
-      if (isSnapshot) {
-        findings.push({
-          id: `db-migration-detected-${file.id}`,
-          ruleId: 'rule-database-migration',
-          title: `Migration file detected: ${file.newPath}`,
-          category: 'database',
-          priority: 'REVIEW',
-          confidence: 'HIGH',
-          changeType: 'Migration file detected',
-          affectedFile: file.newPath,
-          changeSignature: `db:file:${file.newPath}`,
-          evidence: {
-            filePath: file.newPath,
-            changeType: 'file_status',
-            snippet: file.newPath,
-          },
-          explanation: `Schema migration file observed in ${file.newPath}. Review schema changes to ensure safe indexing, column constraints, and foreign key definitions.`,
-          suggestedAction: 'Review database migrations with a DBA or peer reviewer to ensure schema integrity.',
-        });
-      } else if (file.additions > 0 || file.deletions > 0) {
-        findings.push({
-          id: `db-migration-modified-${file.id}`,
-          ruleId: 'rule-database-migration',
-          title: `Migration file added or modified: ${file.newPath}`,
-          category: 'database',
-          priority: 'REVIEW',
-          confidence: 'HIGH',
-          changeType: 'Schema migration file modified',
-          affectedFile: file.newPath,
-          changeSignature: `db:file:${file.newPath}`,
-          evidence: {
-            filePath: file.newPath,
-            changeType: 'modification',
-            snippet: `${file.additions} lines added, ${file.deletions} lines removed`,
-          },
-          explanation: `Schema migration modified in ${file.newPath}. Migrations alter persistent database tables, indices, and constraints.`,
-          suggestedAction: 'Review database migrations with a DBA or peer reviewer before running against staging or production databases.',
-        });
-      }
+    // General migration file finding only if NO destructive SQL was flagged on this file (comparison mode only)
+    if (!isSnapshot && findings.length === 0 && (file.additions > 0 || file.deletions > 0)) {
+      findings.push({
+        id: `db-migration-modified-${file.id}`,
+        ruleId: 'rule-database-migration',
+        title: `Migration file added or modified: ${file.newPath}`,
+        category: 'database',
+        priority: 'REVIEW',
+        confidence: 'HIGH',
+        changeType: 'Schema migration file modified',
+        affectedFile: file.newPath,
+        changeSignature: `db:file:${file.newPath}`,
+        evidence: {
+          filePath: file.newPath,
+          changeType: 'modification',
+          snippet: `${file.additions} lines added, ${file.deletions} lines removed`,
+        },
+        explanation: `Schema migration modified in ${file.newPath}. Migrations alter persistent database tables, indices, and constraints.`,
+        suggestedAction: 'Review database migrations with a DBA or peer reviewer before running against staging or production databases.',
+      });
     }
 
     return findings;

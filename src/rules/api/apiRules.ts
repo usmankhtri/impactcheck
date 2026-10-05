@@ -2,12 +2,21 @@ import { DiffFile, AnalysisMode, AnalysisContext } from '../../types/diff';
 import { Finding } from '../../types/finding';
 import { Rule } from '../types';
 
-interface StructuredRoute {
+export interface StructuredRoute {
   method: string;
   path: string;
   middleware: string[];
   rawLine: string;
   lineNumber: number;
+}
+
+export interface DetectedRoute {
+  method: string;
+  path: string;
+  middleware: string[];
+  filePath: string;
+  lineNumber: number;
+  rawLine: string;
 }
 
 // Router matching patterns (Express, Fastify, Next.js, Flask, Django, Spring)
@@ -80,6 +89,39 @@ export function parseStructuredRoute(lineContent: string, lineNumber: number, _f
   return null;
 }
 
+export function extractDetectedRoutes(files: DiffFile[]): DetectedRoute[] {
+  const routes: DetectedRoute[] = [];
+  const seen = new Set<string>();
+
+  for (const file of files) {
+    if (file.isBinary || file.isLockfile) continue;
+
+    const content = file.afterContent || '';
+    const rawLines = content ? content.split(/\r?\n/) : file.hunks.flatMap((h) => h.lines.map((l) => l.content));
+
+    for (let idx = 0; idx < rawLines.length; idx++) {
+      const line = rawLines[idx];
+      const parsed = parseStructuredRoute(line, idx + 1, file.newPath);
+      if (parsed) {
+        const key = `${parsed.method}:${parsed.path}:${file.newPath}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          routes.push({
+            method: parsed.method,
+            path: parsed.path,
+            middleware: parsed.middleware,
+            filePath: file.newPath,
+            lineNumber: idx + 1,
+            rawLine: parsed.rawLine,
+          });
+        }
+      }
+    }
+  }
+
+  return routes;
+}
+
 const AUTH_MIDDLEWARE_REGEX = /(auth|admin|permission|role|guard|token|jwt|session|protect)/i;
 
 export const apiRule: Rule = {
@@ -120,44 +162,8 @@ export const apiRule: Rule = {
     // SNAPSHOT MODE: Pure observations without baseline
     // ==========================================
     if (isSnapshot) {
-      for (const route of addedRoutes) {
-        const hasAuthMw = route.middleware.some((m) => AUTH_MIDDLEWARE_REGEX.test(m));
-        let explanation: string;
-        if (route.middleware.length > 0) {
-          explanation = hasAuthMw
-            ? `Router endpoint "${route.method} ${route.path}" detected with security middleware (${route.middleware.join(', ')}). Access is guarded by declared middleware.`
-            : `Router endpoint "${route.method} ${route.path}" detected with middleware (${route.middleware.join(', ')}).`;
-        } else {
-          explanation = `Router endpoint "${route.method} ${route.path}" detected without route-level middleware declarations.`;
-        }
-
-        findings.push({
-          id: `api-snapshot-${file.id}-${route.method}-${route.path.replace(/[^a-zA-Z0-9_-]/g, '_')}`,
-          ruleId: 'rule-api-endpoint',
-          title: `Router endpoint detected: ${route.method} ${route.path}`,
-          category: hasAuthMw ? 'authorization' : 'api',
-          priority: 'MEDIUM',
-          confidence: 'HIGH',
-          changeType: 'Router endpoint detected',
-          affectedFile: file.newPath,
-          changeSignature: `api:route:${route.method}:${route.path}`,
-          detectionSignals: route.middleware.length > 0 ? route.middleware : undefined,
-          evidence: {
-            filePath: file.newPath,
-            lineNumber: route.lineNumber,
-            snippet: route.rawLine,
-            afterSnippet: `${route.method} ${route.path}`,
-            changeType: 'file_status',
-            detectionSignals: [
-              `HTTP Method: ${route.method}`,
-              `Router-local path: ${route.path}`,
-              ...(route.middleware.length > 0 ? [`Middleware: ${route.middleware.join(', ')}`] : []),
-            ],
-          },
-          explanation,
-          suggestedAction: 'Verify endpoint request validation, authentication expectations, and OpenAPI documentation.',
-        });
-      }
+      // In snapshot mode, routes populate the project model (API surface overview),
+      // rather than generating noisy findings simply because endpoints exist.
       return findings;
     }
 

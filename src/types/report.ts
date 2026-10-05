@@ -1,6 +1,7 @@
 import { Finding, FindingsSummary } from './finding';
 import { DependencyChange } from './dependency';
 import { ReviewChecklistItem } from './checklist';
+import { ProjectOverviewData } from '../utils/projectOverview';
 
 export interface ImpactCheckReport {
   version: string;
@@ -11,6 +12,8 @@ export interface ImpactCheckReport {
     description: string;
     url?: string;
   };
+  analysisMode?: 'snapshot' | 'comparison';
+  projectOverview?: ProjectOverviewData;
   summary: {
     totalFilesChanged: number;
     totalAdditions: number;
