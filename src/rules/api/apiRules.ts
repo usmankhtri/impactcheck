@@ -202,8 +202,8 @@ export const apiRule: Rule = {
                   filePath: file.newPath,
                   lineNumber: add.lineNumber,
                   snippet: `- ${rem.rawLine}\n+ ${add.rawLine}`,
-                  beforeSnippet: remMidStr || 'none',
-                  afterSnippet: addMidStr || 'none',
+                  beforeSnippet: rem.rawLine.trim(),
+                  afterSnippet: add.rawLine.trim(),
                   changeType: 'modification',
                   detectionSignals: [
                     `Before middleware: ${remMidStr || 'none'}`,

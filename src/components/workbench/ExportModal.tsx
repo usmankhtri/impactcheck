@@ -84,80 +84,122 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, repor
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs"
     >
-      <div className="relative w-full max-w-3xl max-h-[90vh] flex flex-col rounded-xl border border-neutral-300 dark:border-neutral-800 bg-white dark:bg-[#111419] shadow-2xl overflow-hidden my-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 px-4 sm:px-6 py-3.5 sm:py-4">
-          <div>
-            <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
-              Export Diff Impact Report
-            </h2>
-            <p className="text-xs text-neutral-500 mt-0.5">
-              Self-contained review report for pull requests, compliance, or architecture records.
-            </p>
+      <div
+        className="relative w-full max-w-3xl h-[85vh] max-h-[680px] min-h-[420px] flex flex-col rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#111419] shadow-2xl overflow-hidden"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="export-dialog-title"
+      >
+        {/* Fixed Header */}
+        <div className="shrink-0">
+          {/* Top Title & Close Button */}
+          <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800/80 px-4 sm:px-6 py-3.5">
+            <div>
+              <h2 id="export-dialog-title" className="text-sm sm:text-base font-semibold text-neutral-950 dark:text-white">
+                Export report
+              </h2>
+              <p className="text-xs text-neutral-500 mt-0.5">
+                Choose a format and export your review report.
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className="rounded-md p-1.5 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+              aria-label="Close export dialog"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="rounded p-1 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer"
-          >
-            <X className="h-5 w-5" />
-          </button>
+
+          {/* Format Selector Bar */}
+          <div className="px-4 sm:px-6 py-2.5 bg-neutral-50/60 dark:bg-[#0e1117] border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-1.5 text-xs text-neutral-500">
+              <span className="font-medium text-neutral-700 dark:text-neutral-300 hidden sm:inline">Format:</span>
+              <div className="flex items-center gap-1 p-0.5 bg-neutral-200/70 dark:bg-neutral-900 rounded-md border border-neutral-200 dark:border-neutral-800">
+                <button
+                  type="button"
+                  onClick={() => setFormat('markdown')}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition-colors cursor-pointer ${
+                    format === 'markdown'
+                      ? 'bg-white dark:bg-neutral-800 text-neutral-950 dark:text-white shadow-2xs font-semibold'
+                      : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white'
+                  }`}
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                  <span>Markdown</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormat('json')}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition-colors cursor-pointer ${
+                    format === 'json'
+                      ? 'bg-white dark:bg-neutral-800 text-neutral-950 dark:text-white shadow-2xs font-semibold'
+                      : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white'
+                  }`}
+                >
+                  <Code2 className="h-3.5 w-3.5" />
+                  <span>JSON</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormat('html')}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition-colors cursor-pointer ${
+                    format === 'html'
+                      ? 'bg-white dark:bg-neutral-800 text-neutral-950 dark:text-white shadow-2xs font-semibold'
+                      : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white'
+                  }`}
+                >
+                  <Globe className="h-3.5 w-3.5" />
+                  <span>HTML</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormat('text')}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition-colors cursor-pointer ${
+                    format === 'text'
+                      ? 'bg-white dark:bg-neutral-800 text-neutral-950 dark:text-white shadow-2xs font-semibold'
+                      : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white'
+                  }`}
+                >
+                  <AlignLeft className="h-3.5 w-3.5" />
+                  <span>Plain Text</span>
+                </button>
+              </div>
+            </div>
+
+            <span className="text-[11px] font-mono text-neutral-400 hidden md:inline">
+              {format === 'markdown' && '.md document'}
+              {format === 'json' && '.json structured'}
+              {format === 'html' && '.html standalone'}
+              {format === 'text' && '.txt raw'}
+            </span>
+          </div>
         </div>
 
-        {/* Format Selector */}
-        <div className="px-4 sm:px-6 pt-3 pb-2 flex flex-wrap items-center justify-between gap-2.5 border-b border-neutral-100 dark:border-neutral-800/60 overflow-x-auto">
-          <div className="flex items-center gap-1 p-1 bg-neutral-100 dark:bg-neutral-900 rounded text-xs font-medium">
-            <button
-              onClick={() => setFormat('markdown')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded transition-colors cursor-pointer ${
-                format === 'markdown'
-                  ? 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 shadow-xs'
-                  : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
-              }`}
-            >
-              <FileText className="h-3.5 w-3.5" />
-              <span>Markdown</span>
-            </button>
-            <button
-              onClick={() => setFormat('html')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded transition-colors cursor-pointer ${
-                format === 'html'
-                  ? 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 shadow-xs'
-                  : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
-              }`}
-            >
-              <Globe className="h-3.5 w-3.5" />
-              <span>HTML</span>
-            </button>
-            <button
-              onClick={() => setFormat('json')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded transition-colors cursor-pointer ${
-                format === 'json'
-                  ? 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 shadow-xs'
-                  : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
-              }`}
-            >
-              <Code2 className="h-3.5 w-3.5" />
-              <span>JSON</span>
-            </button>
-            <button
-              onClick={() => setFormat('text')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded transition-colors cursor-pointer ${
-                format === 'text'
-                  ? 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 shadow-xs'
-                  : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
-              }`}
-            >
-              <AlignLeft className="h-3.5 w-3.5" />
-              <span>Plain Text</span>
-            </button>
-          </div>
+        {/* Scrollable Content Area */}
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 bg-neutral-50/30 dark:bg-black/20">
+          <pre className="p-4 rounded-lg bg-neutral-50 dark:bg-[#0c0e12] border border-neutral-200 dark:border-neutral-800 font-mono text-xs text-neutral-800 dark:text-neutral-200 leading-relaxed whitespace-pre-wrap break-words selection:bg-neutral-200 dark:selection:bg-neutral-800">
+            {currentContent}
+          </pre>
+        </div>
+
+        {/* Fixed Footer */}
+        <div className="shrink-0 border-t border-neutral-200 dark:border-neutral-800 px-4 sm:px-6 py-3 bg-neutral-50/80 dark:bg-[#0e1117] flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-3.5 py-1.5 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-700 text-xs font-medium text-neutral-700 dark:text-neutral-300 transition-colors cursor-pointer"
+          >
+            Cancel
+          </button>
 
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={handleCopy}
-              className="flex items-center gap-1 px-3 py-1.5 rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-700 text-xs font-medium text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-700 text-xs font-medium text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer"
             >
               {copied ? (
                 <>
@@ -171,21 +213,16 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, repor
                 </>
               )}
             </button>
+
             <button
+              type="button"
               onClick={handleDownload}
-              className="flex items-center gap-1 px-3 py-1.5 rounded bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 text-xs font-semibold hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors shadow-xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-md bg-neutral-950 dark:bg-neutral-100 hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-neutral-950 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
             >
               <Download className="h-3.5 w-3.5" />
-              <span>Download</span>
+              <span>Export</span>
             </button>
           </div>
-        </div>
-
-        {/* Content Preview */}
-        <div className="p-4 sm:p-6 overflow-y-auto flex-1">
-          <pre className="p-4 rounded-lg bg-neutral-50 dark:bg-[#0c0e12] border border-neutral-200 dark:border-neutral-800 font-mono text-xs text-neutral-800 dark:text-neutral-200 overflow-x-auto leading-relaxed whitespace-pre-wrap selection:bg-neutral-300 dark:selection:bg-neutral-700">
-            {currentContent}
-          </pre>
         </div>
       </div>
     </div>

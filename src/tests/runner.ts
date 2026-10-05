@@ -3,6 +3,7 @@ import { runAnalysis } from '../rules';
 import { generateChecklistFromFindings } from '../services/checklistGenerator';
 import { buildReportObject, generateMarkdownReport } from '../services/reportExporter';
 import { computeLineDiff, compareFileMaps } from '../utils/diffGenerator';
+import { executeAnalysisPipeline, AnalysisStageInfo } from '../services/analysisPipeline';
 import { EXAMPLES } from '../examples';
 
 let passed = 0;
@@ -127,7 +128,16 @@ Binary files a/assets/icon.png and b/assets/icon.png differ`;
     const report = buildReportObject(parsedApi, apiResult.findings, apiResult.summary, apiResult.dependencies, chk);
     const md = generateMarkdownReport(report);
     assert(md.includes('# ImpactCheck Code Review Impact Report'), 'Markdown report header generated');
-    assert(md.includes('## 1. Executive Summary'), 'Markdown executive summary generated');
+    assert(md.includes('## 1. Summary'), 'Markdown summary generated');
+    const sections = Array.from(md.matchAll(/^## (\d+)\. /gm)).map((m) => parseInt(m[1], 10));
+    assert(sections.length >= 4, 'Report contains at least 4 sections');
+    for (let sIdx = 0; sIdx < sections.length; sIdx++) {
+      assert(sections[sIdx] === sIdx + 1, `Section numbering is strictly sequential: expected ${sIdx + 1}, got ${sections[sIdx]}`);
+    }
+    assert(!md.includes('Underlying Detection Signals'), 'Report does not expose raw underlying detection signals');
+    assert(!md.includes('Correlated Detection Signals'), 'Report does not expose correlated detection signals');
+    assert(!md.includes('Finding ID:'), 'Report does not expose internal finding IDs');
+    assert(!md.includes('Vulnerability checks leverage the public OSV database'), 'Does not claim OSV lookup when not performed');
 
     // Test 12: Automatic URL Origin Resolution
     const { getAppUrl } = await import('../utils/url');
@@ -210,6 +220,30 @@ new file mode 100644
     assert(routeAddedFindings.length === 0, 'Does not falsely create route added finding when only middleware changed');
     assert(routeRemovedFindings.length === 0, 'Does not falsely create route removed finding when only middleware changed');
     assert(Boolean(authzFindings[0].title.includes('Authorization') && authzFindings[0].title.includes('DELETE /:id')), 'Identified authorization middleware change on DELETE /:id');
+
+    // Scenario 2b: File with import removal and route authorization change produces exactly 1 finding
+    const authFileBefore = `import { Router } from "express";
+import { requireAuth, requireAdmin } from "../middleware/auth";
+import { getUser, deleteUser } from "../services/users";
+const router = Router();
+router.get("/:id", requireAuth, async (req, res) => { return res.json({}); });
+router.delete("/:id", requireAuth, requireAdmin, async (req, res) => { return res.status(204).send(); });
+export default router;`;
+    const authFileAfter = `import { Router } from "express";
+import { requireAuth } from "../middleware/auth";
+import { getUser, deleteUser } from "../services/users";
+const router = Router();
+router.get("/:id", requireAuth, async (req, res) => { return res.json({}); });
+router.delete("/:id", requireAuth, async (req, res) => { return res.status(204).send(); });
+export default router;`;
+    const fullAuthParsed = compareFileMaps(
+      new Map([["src/routes/users.ts", authFileBefore]]),
+      new Map([["src/routes/users.ts", authFileAfter]])
+    );
+    const fullAuthAnalysis = runAnalysis(fullAuthParsed);
+    assert(fullAuthAnalysis.findings.length === 1, `Semantic authorization change with import removal produces exactly 1 finding, got ${fullAuthAnalysis.findings.length}`);
+    assert(fullAuthAnalysis.findings[0].title === 'Authorization requirement changed: DELETE /:id', 'Produces correct specific semantic route finding');
+    assert(fullAuthAnalysis.findings[0].priority === 'HIGH', 'Produces HIGH severity finding');
 
     // Scenario 3: Major dependency upgrade is detected with appropriate severity/confidence
     const majorDepDiff = `diff --git a/package.json b/package.json
@@ -412,6 +446,54 @@ router.get('/api/v2/users', async (req, res) => {
       new Map([['src/file.ts', 'const a = 1;']])
     );
     assert(identicalCmp.totalFiles === 0, 'Identical Before and After produces 0 changed files');
+
+    // Scenario 16: Multi-Stage Analysis Pipeline Lifecycle
+    const reportedStages: AnalysisStageInfo[] = [];
+    const pipelineResult = await executeAnalysisPipeline(
+      {
+        type: 'before-after-text',
+        beforePath: 'src/api/users.ts',
+        beforeContent: sampleBefore,
+        afterPath: 'src/api/users.ts',
+        afterContent: sampleAfter,
+      },
+      (stageInfo) => {
+        reportedStages.push({ ...stageInfo });
+      }
+    );
+
+    assert(reportedStages.length === 7, `Pipeline reported all 7 stages in lifecycle, got ${reportedStages.length}`);
+    assert(reportedStages[0].stage === 'preparing', 'Stage 1 is preparing');
+    assert(reportedStages[1].stage === 'comparing', 'Stage 2 is comparing');
+    assert(reportedStages[2].stage === 'parsing', 'Stage 3 is parsing');
+    assert(reportedStages[3].stage === 'detecting', 'Stage 4 is detecting');
+    assert(reportedStages[4].stage === 'correlating', 'Stage 5 is correlating');
+    assert(reportedStages[5].stage === 'impact', 'Stage 6 is impact');
+    assert(reportedStages[6].stage === 'report', 'Stage 7 is report');
+    assert(reportedStages.every((s) => s.detail && s.detail.length > 5), 'All reported stages have authentic detail strings');
+    assert(pipelineResult.findings.length > 0, 'Pipeline produces non-empty findings');
+    assert(pipelineResult.changeMap.nodes.length > 0, 'Pipeline produces change map nodes');
+    assert(pipelineResult.checklist.length > 0, 'Pipeline produces checklist items');
+    assert(pipelineResult.durationMs >= 0, 'Pipeline records execution duration');
+
+    // Scenario 17: Pipeline input validation error
+    let pipelineErrorCaught = false;
+    try {
+      await executeAnalysisPipeline({
+        type: 'before-after-text',
+        beforePath: 'src/empty.ts',
+        beforeContent: '',
+        afterPath: 'src/empty.ts',
+        afterContent: '',
+      });
+    } catch (err) {
+      pipelineErrorCaught = true;
+      assert(
+        (err as Error).message.includes('empty'),
+        'Empty input throws meaningful validation error'
+      );
+    }
+    assert(pipelineErrorCaught, 'Pipeline rejects empty inputs with error state');
 
     console.log('\n==================================================');
     console.log(`Results: ${passed} passed, ${failed} failed`);

@@ -21,6 +21,11 @@ import { ParsedDiff, DiffFile } from '../../types/diff';
 import { extractZipArchive } from '../../utils/zipParser';
 import { compareFileMaps, createSnapshotProject, computeLineDiff } from '../../utils/diffGenerator';
 import { parseGitDiff } from '../../parser/diffParser';
+import {
+  AnalysisInput,
+  AnalysisStatus,
+  AnalysisStageInfo,
+} from '../../services/analysisPipeline';
 
 export type ComparisonMode = 'before-after' | 'git-diff' | 'snapshot';
 export type ImportMethod = 'paste' | 'file' | 'zip' | 'folder';
@@ -38,8 +43,11 @@ interface FileState {
   isEditing?: boolean;
 }
 
-interface BeforeAfterWorkspaceProps {
-  onAnalyze: (parsedDiff: ParsedDiff, rawDiffText?: string, projectName?: string) => Promise<void> | void;
+export interface BeforeAfterWorkspaceProps {
+  onAnalyze: (input: AnalysisInput) => Promise<void> | void;
+  analysisStatus?: AnalysisStatus;
+  currentStage?: AnalysisStageInfo | null;
+  analysisError?: string | null;
   isAnalyzing?: boolean;
 }
 
@@ -162,8 +170,12 @@ function detectLanguageFromPath(path: string): string {
 
 export const BeforeAfterWorkspace: React.FC<BeforeAfterWorkspaceProps> = ({
   onAnalyze,
+  analysisStatus = 'idle',
+  currentStage = null,
+  analysisError = null,
   isAnalyzing = false,
 }) => {
+  const isCurrentlyAnalyzing = Boolean(isAnalyzing || analysisStatus === 'analyzing');
   const [comparisonMode, setComparisonMode] = useState<ComparisonMode>('before-after');
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showExamplesMenu, setShowExamplesMenu] = useState(false);
@@ -457,16 +469,20 @@ export const BeforeAfterWorkspace: React.FC<BeforeAfterWorkspaceProps> = ({
 
   // Execute Analysis
   const handleExecuteAnalysis = () => {
-    if (!validation.canAnalyze || isAnalyzing) return;
+    if (!validation.canAnalyze || isCurrentlyAnalyzing) return;
     setErrorMessage(null);
 
     try {
       if (comparisonMode === 'before-after') {
         // Project vs Project
         if (beforeState.filesMap && afterState.filesMap) {
-          const parsed = compareFileMaps(beforeState.filesMap, afterState.filesMap);
-          parsed.analysisMode = 'comparison';
-          onAnalyze(parsed, undefined, `${beforeState.name} → ${afterState.name}`);
+          onAnalyze({
+            type: 'before-after-projects',
+            beforeName: beforeState.name || 'Base Project',
+            afterName: afterState.name || 'Target Project',
+            beforeFiles: beforeState.filesMap,
+            afterFiles: afterState.filesMap,
+          });
           return;
         }
 
@@ -476,57 +492,33 @@ export const BeforeAfterWorkspace: React.FC<BeforeAfterWorkspaceProps> = ({
         const beforeText = beforeState.content;
         const afterText = afterState.content;
 
-        const { hunks, additions, deletions } = computeLineDiff(beforeText, afterText);
-        const status = beforePath === afterPath ? 'modified' : 'renamed';
-        const linesAnalyzed = (beforeText ? beforeText.split(/\r?\n/).length : 0) + (afterText ? afterText.split(/\r?\n/).length : 0);
-
-        const diffFile: DiffFile = {
-          id: `file-cmp-${Date.now()}`,
-          oldPath: beforePath,
-          newPath: afterPath,
-          status,
-          isBinary: false,
-          isLockfile: false,
-          additions,
-          deletions,
-          linesAnalyzed,
-          hunks,
-          rawHeader: [`diff --git a/${beforePath} b/${afterPath}`, `--- a/${beforePath}`, `+++ b/${afterPath}`],
+        onAnalyze({
+          type: 'before-after-text',
+          beforePath,
           beforeContent: beforeText,
+          afterPath,
           afterContent: afterText,
-        };
-
-        const parsedDiff: ParsedDiff = {
-          files: [diffFile],
-          totalFiles: 1,
-          totalAdditions: additions,
-          totalDeletions: deletions,
-          totalLinesAnalyzed: linesAnalyzed,
-          hasBinaryFiles: false,
-          hasLockfiles: false,
-          parsedAt: new Date().toISOString(),
-          analysisMode: 'comparison',
-          hasBaseline: true,
-        };
-
-        const projectName = afterPath.split('/').pop() || 'File Comparison';
-        onAnalyze(parsedDiff, undefined, projectName);
+          projectName: afterPath.split('/').pop() || 'File Comparison',
+        });
         return;
       }
 
       if (comparisonMode === 'git-diff') {
-        const parsed = parseGitDiff(gitDiffText);
-        parsed.analysisMode = 'git-diff';
-        const projectName = gitDiffFileName || parsed.files[0]?.newPath || 'Git Diff';
-        onAnalyze(parsed, gitDiffText, projectName);
+        onAnalyze({
+          type: 'git-diff',
+          diffText: gitDiffText,
+          fileName: gitDiffFileName || undefined,
+        });
         return;
       }
 
       if (comparisonMode === 'snapshot') {
         if (!snapshotFiles) return;
-        const parsed = createSnapshotProject(snapshotFiles);
-        const projectName = snapshotName || 'Project Snapshot';
-        onAnalyze(parsed, undefined, projectName);
+        onAnalyze({
+          type: 'snapshot',
+          projectName: snapshotName || 'Project Snapshot',
+          files: snapshotFiles,
+        });
         return;
       }
     } catch (err: unknown) {
@@ -719,6 +711,7 @@ export const BeforeAfterWorkspace: React.FC<BeforeAfterWorkspaceProps> = ({
               onSelectFolder={() => beforeFolderInputRef.current?.click()}
               onClear={() => handleClearSide('before')}
               onToggleEdit={() => setBeforeState((p) => ({ ...p, isEditing: !p.isEditing }))}
+              disabled={isCurrentlyAnalyzing}
             />
 
             {/* Mobile divider */}
@@ -741,6 +734,7 @@ export const BeforeAfterWorkspace: React.FC<BeforeAfterWorkspaceProps> = ({
               onSelectFolder={() => afterFolderInputRef.current?.click()}
               onClear={() => handleClearSide('after')}
               onToggleEdit={() => setAfterState((p) => ({ ...p, isEditing: !p.isEditing }))}
+              disabled={isCurrentlyAnalyzing}
             />
           </div>
         </div>
@@ -761,17 +755,19 @@ export const BeforeAfterWorkspace: React.FC<BeforeAfterWorkspaceProps> = ({
           <div className="flex items-center gap-2">
             <button
               type="button"
+              disabled={isCurrentlyAnalyzing}
               onClick={() => setGitDiffMethod('paste')}
               className={`px-3 py-1 text-xs rounded border transition-colors cursor-pointer ${
                 gitDiffMethod === 'paste'
                   ? 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-950 border-transparent font-medium'
                   : 'text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-800'
-              }`}
+              } ${isCurrentlyAnalyzing ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               Paste diff
             </button>
             <button
               type="button"
+              disabled={isCurrentlyAnalyzing}
               onClick={() => {
                 setGitDiffMethod('file');
                 gitDiffFileInputRef.current?.click();
@@ -780,7 +776,7 @@ export const BeforeAfterWorkspace: React.FC<BeforeAfterWorkspaceProps> = ({
                 gitDiffMethod === 'file'
                   ? 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-950 border-transparent font-medium'
                   : 'text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-800'
-              }`}
+              } ${isCurrentlyAnalyzing ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               Upload .diff file
             </button>
@@ -788,6 +784,7 @@ export const BeforeAfterWorkspace: React.FC<BeforeAfterWorkspaceProps> = ({
 
           <textarea
             value={gitDiffText}
+            disabled={isCurrentlyAnalyzing}
             onChange={(e) => setGitDiffText(e.target.value)}
             placeholder={`diff --git a/src/index.ts b/src/index.ts
 --- a/src/index.ts
@@ -795,7 +792,7 @@ export const BeforeAfterWorkspace: React.FC<BeforeAfterWorkspaceProps> = ({
 @@ -10,3 +10,3 @@
 -const port = 3000;
 +const port = process.env.PORT || 8080;`}
-            className="w-full h-72 p-3 rounded border border-neutral-200 dark:border-neutral-800 bg-transparent font-mono text-xs text-neutral-900 dark:text-neutral-100 leading-5 focus:outline-none overflow-x-auto whitespace-pre"
+            className="w-full h-72 p-3 rounded border border-neutral-200 dark:border-neutral-800 bg-transparent font-mono text-xs text-neutral-900 dark:text-neutral-100 leading-5 focus:outline-none overflow-x-auto whitespace-pre disabled:opacity-50"
             spellCheck={false}
           />
         </div>
@@ -816,8 +813,9 @@ export const BeforeAfterWorkspace: React.FC<BeforeAfterWorkspaceProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <button
               type="button"
+              disabled={isCurrentlyAnalyzing}
               onClick={() => snapshotZipInputRef.current?.click()}
-              className="p-5 rounded-lg border border-neutral-200 dark:border-neutral-800 hover:border-neutral-400 dark:hover:border-neutral-600 bg-neutral-50/50 dark:bg-neutral-900/30 text-left transition-colors cursor-pointer"
+              className="p-5 rounded-lg border border-neutral-200 dark:border-neutral-800 hover:border-neutral-400 dark:hover:border-neutral-600 bg-neutral-50/50 dark:bg-neutral-900/30 text-left transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Archive className="h-5 w-5 text-neutral-700 dark:text-neutral-300 mb-1.5" />
               <div className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">Upload ZIP</div>
@@ -826,8 +824,9 @@ export const BeforeAfterWorkspace: React.FC<BeforeAfterWorkspaceProps> = ({
 
             <button
               type="button"
+              disabled={isCurrentlyAnalyzing}
               onClick={() => snapshotFolderInputRef.current?.click()}
-              className="p-5 rounded-lg border border-neutral-200 dark:border-neutral-800 hover:border-neutral-400 dark:hover:border-neutral-600 bg-neutral-50/50 dark:bg-neutral-900/30 text-left transition-colors cursor-pointer"
+              className="p-5 rounded-lg border border-neutral-200 dark:border-neutral-800 hover:border-neutral-400 dark:hover:border-neutral-600 bg-neutral-50/50 dark:bg-neutral-900/30 text-left transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <FolderOpen className="h-5 w-5 text-neutral-700 dark:text-neutral-300 mb-1.5" />
               <div className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">Select folder</div>
@@ -842,12 +841,13 @@ export const BeforeAfterWorkspace: React.FC<BeforeAfterWorkspaceProps> = ({
               </span>
               <button
                 type="button"
+                disabled={isCurrentlyAnalyzing}
                 onClick={() => {
                   setSnapshotFiles(null);
                   setSnapshotCount(0);
                   setSnapshotName('');
                 }}
-                className="text-neutral-400 hover:text-rose-600 cursor-pointer"
+                className="text-neutral-400 hover:text-rose-600 cursor-pointer disabled:opacity-50"
               >
                 Clear
               </button>
@@ -857,31 +857,106 @@ export const BeforeAfterWorkspace: React.FC<BeforeAfterWorkspaceProps> = ({
       )}
 
       {/* Error Message */}
-      {errorMessage && (
-        <div className="mt-4 p-3 rounded border border-rose-200 dark:border-rose-900/50 bg-rose-50/50 dark:bg-rose-950/20 text-xs text-rose-700 dark:text-rose-300">
-          {errorMessage}
+      {(errorMessage || analysisError) && (
+        <div className="mt-4 p-3 rounded-lg border border-rose-200 dark:border-rose-900/50 bg-rose-50/50 dark:bg-rose-950/20 text-xs text-rose-700 dark:text-rose-300 flex items-center justify-between">
+          <span>{errorMessage || analysisError}</span>
+          <button
+            type="button"
+            onClick={() => setErrorMessage(null)}
+            className="text-rose-600 dark:text-rose-300 hover:underline cursor-pointer font-medium text-xs ml-3 shrink-0"
+          >
+            Dismiss
+          </button>
         </div>
       )}
 
-      {/* Primary Action Button (Centered & Clean) */}
-      <div className="mt-8 pt-5 border-t border-neutral-200 dark:border-neutral-800 flex flex-col items-center justify-center space-y-2">
-        <button
-          type="button"
-          disabled={!validation.canAnalyze || isAnalyzing}
-          onClick={handleExecuteAnalysis}
-          className={`inline-flex items-center justify-center gap-2 px-8 py-3 text-sm font-semibold rounded-lg transition-all cursor-pointer ${
-            validation.canAnalyze && !isAnalyzing
-              ? 'bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 hover:bg-neutral-800 dark:hover:bg-neutral-200 shadow-sm'
-              : 'bg-neutral-200 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-600 cursor-not-allowed'
-          }`}
-        >
-          <span>{isAnalyzing ? 'Analyzing…' : 'Analyze Impact →'}</span>
-        </button>
+      {/* Analysis State vs Primary Action Button */}
+      {isCurrentlyAnalyzing ? (
+        <div className="mt-8 pt-5 border-t border-neutral-200 dark:border-neutral-800 flex flex-col items-center justify-center">
+          <div className="w-full max-w-lg p-5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/80 dark:bg-neutral-900/60 shadow-xs flex flex-col items-center text-center">
+            {/* Subtle spinner & title */}
+            <div className="flex items-center gap-2.5 text-neutral-950 dark:text-white font-semibold text-sm">
+              <svg
+                className="animate-spin h-4 w-4 text-neutral-800 dark:text-neutral-200"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+              <span>Analyzing your changes…</span>
+            </div>
 
-        <span className="text-xs text-neutral-500 font-medium">
-          {isAnalyzing ? 'Analyzing changes…' : validation.message}
-        </span>
-      </div>
+            {/* Current Real Stage */}
+            <div className="mt-3 flex items-center gap-2">
+              <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 font-semibold">
+                Stage {currentStage?.stepIndex || 1} of {currentStage?.totalSteps || 7}
+              </span>
+              <span className="text-xs font-semibold text-neutral-800 dark:text-neutral-200">
+                {currentStage?.label || 'Processing…'}
+              </span>
+            </div>
+
+            {/* Detail */}
+            <p className="mt-1.5 text-xs text-neutral-600 dark:text-neutral-400 font-mono text-center max-w-md truncate">
+              {currentStage?.detail || 'Inspecting syntax and differences…'}
+            </p>
+
+            {/* Stage Progress Pills */}
+            <div className="mt-4 flex items-center justify-center gap-1.5 w-full max-w-xs">
+              {Array.from({ length: 7 }).map((_, idx) => {
+                const currentIdx = (currentStage?.stepIndex || 1) - 1;
+                const isPassed = idx < currentIdx;
+                const isCurrent = idx === currentIdx;
+                return (
+                  <div
+                    key={idx}
+                    className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+                      isPassed
+                        ? 'bg-neutral-900 dark:bg-neutral-100'
+                        : isCurrent
+                        ? 'bg-neutral-500 dark:bg-neutral-400 animate-pulse'
+                        : 'bg-neutral-200 dark:bg-neutral-800'
+                    }`}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* Primary Action Button (Centered & Clean) */
+        <div className="mt-8 pt-5 border-t border-neutral-200 dark:border-neutral-800 flex flex-col items-center justify-center space-y-2">
+          <button
+            type="button"
+            disabled={!validation.canAnalyze || isCurrentlyAnalyzing}
+            onClick={handleExecuteAnalysis}
+            className={`inline-flex items-center justify-center gap-2 px-8 py-3 text-sm font-semibold rounded-lg transition-all cursor-pointer ${
+              validation.canAnalyze && !isCurrentlyAnalyzing
+                ? 'bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 hover:bg-neutral-800 dark:hover:bg-neutral-200 shadow-sm'
+                : 'bg-neutral-200 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-600 cursor-not-allowed'
+            }`}
+          >
+            <span>Analyze Impact →</span>
+          </button>
+
+          <span className="text-xs text-neutral-500 font-medium">
+            {validation.message}
+          </span>
+        </div>
+      )}
     </div>
   );
 };
@@ -904,6 +979,7 @@ interface SideSectionProps {
   onSelectFolder: () => void;
   onClear: () => void;
   onToggleEdit: () => void;
+  disabled?: boolean;
 }
 
 const SideSection: React.FC<SideSectionProps> = ({
@@ -920,6 +996,7 @@ const SideSection: React.FC<SideSectionProps> = ({
   onSelectFolder,
   onClear,
   onToggleEdit,
+  disabled = false,
 }) => {
   const [showAddMenu, setShowAddMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -965,14 +1042,17 @@ const SideSection: React.FC<SideSectionProps> = ({
         <div className="relative" ref={menuRef}>
           <button
             type="button"
-            onClick={() => setShowAddMenu(!showAddMenu)}
-            className="px-2.5 py-1 text-xs font-medium rounded border border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer flex items-center gap-1"
+            disabled={disabled}
+            onClick={() => !disabled && setShowAddMenu(!showAddMenu)}
+            className={`px-2.5 py-1 text-xs font-medium rounded border border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors flex items-center gap-1 ${
+              disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+            }`}
           >
             <Plus className="h-3 w-3" />
             <span>Add code</span>
           </button>
 
-          {showAddMenu && (
+          {showAddMenu && !disabled && (
             <div className="absolute right-0 top-full mt-1 w-44 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#12151c] shadow-lg py-1 z-50 text-xs">
               <button
                 type="button"
@@ -1042,23 +1122,26 @@ const SideSection: React.FC<SideSectionProps> = ({
             {state.content && (
               <button
                 type="button"
+                disabled={disabled}
                 onClick={onToggleEdit}
-                className="text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white underline cursor-pointer"
+                className="text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white underline cursor-pointer disabled:opacity-50"
               >
                 View / Edit
               </button>
             )}
             <button
               type="button"
+              disabled={disabled}
               onClick={onSelectPaste}
-              className="text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white cursor-pointer"
+              className="text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white cursor-pointer disabled:opacity-50"
             >
               Replace
             </button>
             <button
               type="button"
+              disabled={disabled}
               onClick={onClear}
-              className="text-neutral-400 hover:text-rose-600 cursor-pointer"
+              className="text-neutral-400 hover:text-rose-600 cursor-pointer disabled:opacity-50"
             >
               Remove
             </button>
@@ -1071,10 +1154,11 @@ const SideSection: React.FC<SideSectionProps> = ({
           <div className="flex items-center justify-between text-xs px-2 py-1 rounded bg-neutral-50 dark:bg-neutral-900/50 border border-neutral-100 dark:border-neutral-800">
             <input
               type="text"
+              disabled={disabled}
               value={state.path}
               onChange={(e) => onPathChange(e.target.value)}
               placeholder="src/file.ts"
-              className="font-mono text-xs text-neutral-800 dark:text-neutral-200 bg-transparent focus:outline-none flex-1"
+              className="font-mono text-xs text-neutral-800 dark:text-neutral-200 bg-transparent focus:outline-none flex-1 disabled:opacity-50"
             />
             <span className="text-[10px] font-mono text-neutral-400 shrink-0">
               {detectLanguageFromPath(state.path)}
@@ -1097,11 +1181,12 @@ const SideSection: React.FC<SideSectionProps> = ({
 
             <textarea
               ref={textareaRef}
+              disabled={disabled}
               value={state.content}
               onChange={(e) => onContentChange(e.target.value)}
               onScroll={handleScroll}
               placeholder={`${placeholder}\n${helper}`}
-              className="flex-1 p-2 bg-transparent text-xs font-mono text-neutral-900 dark:text-neutral-100 leading-5 focus:outline-none resize-none overflow-x-auto whitespace-pre"
+              className="flex-1 p-2 bg-transparent text-xs font-mono text-neutral-900 dark:text-neutral-100 leading-5 focus:outline-none resize-none overflow-x-auto whitespace-pre disabled:opacity-50"
               spellCheck={false}
               autoCapitalize="off"
               autoComplete="off"
@@ -1114,8 +1199,9 @@ const SideSection: React.FC<SideSectionProps> = ({
             {state.content && (
               <button
                 type="button"
+                disabled={disabled}
                 onClick={onClear}
-                className="hover:text-rose-600 cursor-pointer"
+                className="hover:text-rose-600 cursor-pointer disabled:opacity-50"
               >
                 Clear
               </button>

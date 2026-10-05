@@ -15,6 +15,21 @@ export function buildReportObject(
   const activeFindings = findings.filter((f) => !f.isDismissed);
   const completedChecklist = checklist.filter((c) => c.completed).length;
 
+  const disclaimers: string[] = [
+    'ImpactCheck provides deterministic static analysis to support human code review. Results are recommendations and do not constitute a formal security audit or guarantee that a change is free of defects.',
+  ];
+
+  if (activeFindings.some((f) => f.category === 'tests')) {
+    disclaimers.push('Test impact assessment is heuristic and based solely on files included in this changeset.');
+  }
+
+  const hasOsvAdvisories = dependencies.some(
+    (d) => (d.osvStatus && d.osvStatus !== 'idle') || (d.advisories && d.advisories.length > 0)
+  );
+  if (hasOsvAdvisories) {
+    disclaimers.push('Vulnerability checks leverage the public OSV database; absence of an advisory does not guarantee security.');
+  }
+
   return {
     version: '1.0.0',
     generatedAt: new Date().toISOString(),
@@ -47,89 +62,82 @@ export function buildReportObject(
     findings: activeFindings,
     dependencies,
     checklist,
-    disclaimers: [
-      'ImpactCheck provides deterministic static heuristics and recommendations for human code review.',
-      'Analysis results do not constitute a formal security audit or a guarantee of bug-free deployment.',
-      'Test impact assessment is heuristic and based solely on files included in this diff.',
-      'Vulnerability checks leverage the public OSV database; absence of an advisory does not guarantee security.',
-    ],
+    disclaimers,
   };
 }
 
 export function generateMarkdownReport(report: ImpactCheckReport): string {
   const { summary, files, findings, dependencies, checklist, disclaimers } = report;
+  const isSnapshot = summary.totalAdditions === 0 && summary.totalDeletions === 0 && files.every((f) => f.status === 'detected');
 
   let md = `# ImpactCheck Code Review Impact Report\n\n`;
   md += `**Generated**: ${new Date(report.generatedAt).toUTCString()}\n`;
-  md += `**Tool**: ${report.tool.name} v${report.tool.version}${report.tool.url ? ` (${report.tool.url})` : ''}\n\n`;
+  md += `**Tool**: ${report.tool.name} v${report.tool.version}\n\n`;
 
-  md += `## 1. Executive Summary\n\n`;
-  md += `- **Files Changed**: ${summary.totalFilesChanged}\n`;
-  md += `- **Line Delta**: +${summary.totalAdditions} / -${summary.totalDeletions}\n`;
-  md += `- **Unique Review Findings**: ${summary.findingsCount}\n`;
-  md += `- **Underlying Detection Signals**: ${summary.signalsCount || summary.findingsCount}\n`;
-  md += `  - High Priority: ${summary.breakdown.byPriority.HIGH}\n`;
-  md += `  - Medium Priority: ${summary.breakdown.byPriority.MEDIUM}\n`;
-  md += `  - Review Recommended: ${summary.breakdown.byPriority.REVIEW}\n`;
-  md += `  - Low Priority: ${summary.breakdown.byPriority.LOW}\n`;
-  md += `- **Checklist Progress**: ${summary.checklistProgress.completed}/${summary.checklistProgress.total} completed (${summary.checklistProgress.percentage}%)\n\n`;
+  let section = 1;
 
-  md += `## 2. Changed Files\n\n`;
+  // 1. Summary
+  md += `## ${section++}. Summary\n\n`;
+  if (isSnapshot) {
+    md += `- Files analyzed: ${summary.totalFilesChanged}\n`;
+    md += `- Lines analyzed: ${files.reduce((sum, f) => sum + (f.additions + f.deletions || 0), 0) || summary.totalAdditions}\n`;
+  } else {
+    md += `- Files changed: ${summary.totalFilesChanged}\n`;
+    md += `- Lines changed: +${summary.totalAdditions} / -${summary.totalDeletions}\n`;
+  }
+  md += `- Review findings: ${summary.findingsCount}\n`;
+  md += `  - High: ${summary.breakdown.byPriority.HIGH}\n`;
+  md += `  - Medium: ${summary.breakdown.byPriority.MEDIUM}\n`;
+  md += `  - Low: ${summary.breakdown.byPriority.LOW}\n\n`;
+
+  // 2. Changed Files (or Analyzed Files)
+  md += `## ${section++}. ${isSnapshot ? 'Analyzed Files' : 'Changed Files'}\n\n`;
   md += `| File | Status | Lines Changed | Findings |\n`;
-  md += `| :--- | :--- | :---: | :---: |\n`;
+  md += `| :--- | :--- | ---: | ---: |\n`;
   for (const f of files) {
-    md += `| \`${f.path}\` | ${f.status} | +${f.additions} / -${f.deletions} | ${f.findingsCount} |\n`;
+    const linesStr = isSnapshot ? `${f.additions || 0}` : `+${f.additions} / -${f.deletions}`;
+    md += `| \`${f.path}\` | ${f.status} | ${linesStr} | ${f.findingsCount} |\n`;
   }
   md += `\n`;
 
-  md += `## 3. Review Findings & Evidence\n\n`;
+  // 3. Findings
+  md += `## ${section++}. Findings\n\n`;
   if (findings.length === 0) {
-    md += `_No specific high-priority risk patterns or boundary alterations were detected in this diff._\n\n`;
+    md += `_No review findings detected in this analysis._\n\n`;
   } else {
     for (let i = 0; i < findings.length; i++) {
       const f = findings[i];
-      md += `### ${i + 1}. [${f.priority}] ${f.title}\n\n`;
-      md += `- **Finding ID**: \`${f.id}\`\n`;
-      md += `- **Category**: ${f.category}\n`;
-      md += `- **Severity**: ${f.priority} | **Confidence**: ${f.confidence || 'HIGH'}\n`;
-      md += `- **File**: \`${f.affectedFile}\`${f.evidence.lineNumber ? ` (Line ${f.evidence.lineNumber})` : ''}\n`;
+      md += `### ${i + 1}. ${f.title}\n\n`;
+      md += `Severity: ${f.priority}\n`;
+      md += `Confidence: ${f.confidence || 'HIGH'}\n\n`;
+      md += `**File**\n\`${f.affectedFile}${f.evidence.lineNumber ? `:${f.evidence.lineNumber}` : ''}\`\n\n`;
+
       if (f.changeType) {
-        md += `- **What Changed**: ${f.changeType}\n`;
+        md += `**What changed**\n\n${f.changeType}\n\n`;
       }
-      md += `- **Why It Matters**: ${f.explanation}\n`;
-      md += `- **Suggested Review Action**: ${f.suggestedAction}\n`;
+      md += `**Why it matters**\n\n${f.explanation}\n\n`;
+      if (f.suggestedAction) {
+        md += `**Review action**\n\n${f.suggestedAction}\n\n`;
+      }
 
       if (f.evidence.beforeSnippet || f.evidence.afterSnippet) {
-        md += `\n**Before / After Evidence**:\n`;
         if (f.evidence.beforeSnippet) {
-          md += `- **Before**: \`${f.evidence.beforeSnippet}\`\n`;
+          md += `**Before**\n\n\`\`\`text\n${f.evidence.beforeSnippet}\n\`\`\`\n\n`;
         }
         if (f.evidence.afterSnippet) {
-          md += `- **After**: \`${f.evidence.afterSnippet}\`\n`;
+          md += `**After**\n\n\`\`\`text\n${f.evidence.afterSnippet}\n\`\`\`\n\n`;
         }
+      } else if (f.evidence.snippet) {
+        md += `**Diff excerpt**\n\n\`\`\`diff\n${f.evidence.snippet}\n\`\`\`\n\n`;
       }
 
-      if (f.evidence.snippet) {
-        md += `\n**Diff Excerpt**:\n\`\`\`\n${f.evidence.snippet}\n\`\`\`\n`;
-      }
-
-      if (f.detectionSignals && f.detectionSignals.length > 0) {
-        md += `\n- **Correlated Detection Signals**: ${f.detectionSignals.join(', ')}\n`;
-      }
-
-      if (f.relatedFindingIds && f.relatedFindingIds.length > 0) {
-        md += `- **Related Findings**: ${f.relatedFindingIds.map((id) => `\`${id}\``).join(', ')}\n`;
-      }
-
-      if (f.limitations) {
-        md += `\n*Note on heuristic*: ${f.limitations}\n`;
-      }
-      md += `\n---\n\n`;
+      md += `---\n\n`;
     }
   }
 
+  // 4. Dependency Changes (conditional, dynamically numbered)
   if (dependencies.length > 0) {
-    md += `## 4. Dependency Changes\n\n`;
+    md += `## ${section++}. Dependency Changes\n\n`;
     md += `| Package | Ecosystem | Change | Old Version | New Version | Major Bump? |\n`;
     md += `| :--- | :--- | :--- | :--- | :--- | :---: |\n`;
     for (const d of dependencies) {
@@ -138,41 +146,49 @@ export function generateMarkdownReport(report: ImpactCheckReport): string {
     md += `\n`;
   }
 
-  md += `## 5. Review Checklist\n\n`;
-  for (const c of checklist) {
-    md += `- [${c.completed ? 'x' : ' '}] **[${c.category}]** ${c.title}\n`;
+  // 5. Review Checklist (conditional, dynamically numbered)
+  if (checklist.length > 0) {
+    md += `## ${section++}. Review Checklist\n\n`;
+    for (const c of checklist) {
+      md += `- [${c.completed ? 'x' : ' '}] ${c.title}\n`;
+    }
+    md += `\n`;
   }
-  md += `\n`;
 
-  md += `## 6. Disclaimers & Limitations\n\n`;
+  // 6. Limitations (dynamically numbered)
+  md += `## ${section++}. Limitations\n\n`;
   for (const d of disclaimers) {
-    md += `- ${d}\n`;
+    md += `${d}\n\n`;
   }
-  md += `\n`;
 
   return md;
 }
 
 export function generatePlainTextReport(report: ImpactCheckReport): string {
   const { summary, files, findings, checklist } = report;
+  const isSnapshot = summary.totalAdditions === 0 && summary.totalDeletions === 0 && files.every((f) => f.status === 'detected');
+
   let text = `==================================================\n`;
   text += `IMPACTCHECK CODE REVIEW REPORT\n`;
   text += `Generated: ${new Date(report.generatedAt).toUTCString()}\n`;
   text += `==================================================\n\n`;
 
   text += `SUMMARY:\n`;
-  text += `Files changed: ${summary.totalFilesChanged} (+${summary.totalAdditions} / -${summary.totalDeletions})\n`;
-  text += `Unique review findings: ${summary.findingsCount} (${summary.signalsCount || summary.findingsCount} signals)\n`;
-  text += `Checklist: ${summary.checklistProgress.completed}/${summary.checklistProgress.total} completed\n\n`;
+  if (isSnapshot) {
+    text += `Files analyzed: ${summary.totalFilesChanged}\n`;
+  } else {
+    text += `Files changed: ${summary.totalFilesChanged} (+${summary.totalAdditions} / -${summary.totalDeletions})\n`;
+  }
+  text += `Review findings: ${summary.findingsCount} (High: ${summary.breakdown.byPriority.HIGH}, Medium: ${summary.breakdown.byPriority.MEDIUM}, Low: ${summary.breakdown.byPriority.LOW})\n\n`;
 
-  text += `REVIEW FINDINGS:\n`;
+  text += `FINDINGS:\n`;
   for (let i = 0; i < findings.length; i++) {
     const f = findings[i];
     text += `[${f.priority}] ${f.title}\n`;
     text += `File: ${f.affectedFile}${f.evidence.lineNumber ? `:${f.evidence.lineNumber}` : ''}\n`;
     text += `Confidence: ${f.confidence || 'HIGH'} | Category: ${f.category}\n`;
-    text += `Explanation: ${f.explanation}\n`;
-    text += `Action: ${f.suggestedAction}\n`;
+    text += `Why it matters: ${f.explanation}\n`;
+    if (f.suggestedAction) text += `Review action: ${f.suggestedAction}\n`;
     if (f.evidence.beforeSnippet) text += `Before: ${f.evidence.beforeSnippet}\n`;
     if (f.evidence.afterSnippet) text += `After: ${f.evidence.afterSnippet}\n`;
     text += `--------------------------------------------------\n`;

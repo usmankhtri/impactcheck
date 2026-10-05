@@ -24,6 +24,12 @@ import { DependencyChange } from '../../types/dependency';
 import { ReviewChecklistItem } from '../../types/checklist';
 import { parseGitDiff } from '../../parser/diffParser';
 import { runAnalysis } from '../../rules';
+import {
+  executeAnalysisPipeline,
+  AnalysisInput,
+  AnalysisStatus,
+  AnalysisStageInfo,
+} from '../../services/analysisPipeline';
 import { generateChecklistFromFindings } from '../../services/checklistGenerator';
 import { buildReportObject } from '../../services/reportExporter';
 import { saveHistoryEntry, HistoryEntry } from '../../services/historyService';
@@ -89,59 +95,71 @@ export const DiffWorkbench: React.FC = () => {
   // Derived signature analyses
   const [changeMap, setChangeMap] = useState<ChangeMapData>({ nodes: [], edges: [], layers: {} });
   const [breakingWatchlist, setBreakingWatchlist] = useState<BreakingChangeItem[]>([]);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisStatus, setAnalysisStatus] = useState<AnalysisStatus>('idle');
+  const [currentStage, setCurrentStage] = useState<AnalysisStageInfo | null>(null);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
 
-  // Execute or Load Analysis
+  // Execute Analysis via the multi-stage pipeline
+  const handleExecutePipeline = async (input: AnalysisInput) => {
+    setAnalysisStatus('analyzing');
+    setAnalysisError(null);
+    setCurrentStage(null);
+
+    try {
+      const result = await executeAnalysisPipeline(input, (stageInfo) => {
+        setCurrentStage(stageInfo);
+      });
+
+      setParsedDiff(result.parsedDiff);
+      setProjectName(result.projectName);
+      setFindings(result.findings);
+      setSummary(result.summary);
+      setDependencies(result.dependencies);
+      setChecklist(result.checklist);
+      setChangeMap(result.changeMap);
+      setBreakingWatchlist(result.breakingWatchlist);
+      setSelectedFileId(result.parsedDiff.files[0]?.id || null);
+      setSelectedFindingId(null);
+      setActiveView('diff');
+      setActiveMobileTab('diff');
+      setAnalysisStatus('complete');
+
+      // Save to local history
+      saveHistoryEntry({
+        name: result.projectName,
+        totalFiles: result.parsedDiff.totalFiles,
+        totalAdditions: result.parsedDiff.totalAdditions,
+        totalDeletions: result.parsedDiff.totalDeletions,
+        findingsCount: result.findings.length,
+        highPriorityCount: result.summary.byPriority.HIGH,
+        diffText: result.rawDiffText,
+      });
+    } catch (err: unknown) {
+      console.error('Analysis pipeline failed', err);
+      const msg = err instanceof Error ? err.message : 'Analysis failed. Please check input changes.';
+      setAnalysisError(msg);
+      setAnalysisStatus('error');
+    }
+  };
+
   const handleCompleteAnalysis = async (
     parsed: ParsedDiff,
     rawDiffText?: string,
     inferredProjectName?: string
   ) => {
-    setIsAnalyzing(true);
-    const startTime = performance.now();
-
-    try {
-      const analysis = runAnalysis(parsed);
-      const initialChecklist = generateChecklistFromFindings(analysis.findings);
-      const map = buildChangeMap(parsed.files, analysis.findings);
-      const watchlist = extractBreakingWatchlist(parsed.files, analysis.findings);
-      const name = inferredProjectName || parsed.files[0]?.newPath.split('/')[0] || 'Project Changes';
-
-      const elapsed = performance.now() - startTime;
-      if (elapsed < 2000) {
-        await new Promise((resolve) => setTimeout(resolve, 2000 - elapsed));
-      }
-
-      setParsedDiff(parsed);
-      setProjectName(name);
-      setFindings(analysis.findings);
-      setSummary(analysis.summary);
-      setDependencies(analysis.dependencies);
-      setChecklist(initialChecklist);
-      setChangeMap(map);
-      setBreakingWatchlist(watchlist);
-      setSelectedFileId(parsed.files[0]?.id || null);
-      setSelectedFindingId(null);
-      setActiveView('diff');
-      setActiveMobileTab('diff');
-
-      // Save to local history
-      saveHistoryEntry({
-        name,
-        totalFiles: parsed.totalFiles,
-        totalAdditions: parsed.totalAdditions,
-        totalDeletions: parsed.totalDeletions,
-        findingsCount: analysis.findings.length,
-        highPriorityCount: analysis.summary.byPriority.HIGH,
-        diffText: rawDiffText,
-      });
-    } finally {
-      setIsAnalyzing(false);
-    }
+    await handleExecutePipeline({
+      type: 'parsed-diff',
+      parsed,
+      rawDiffText,
+      projectName: inferredProjectName,
+    });
   };
 
   const handleClear = () => {
     setParsedDiff(null);
+    setAnalysisStatus('idle');
+    setCurrentStage(null);
+    setAnalysisError(null);
     setProjectName('Current Changeset');
     setFindings([]);
     setSummary(null);
@@ -286,7 +304,13 @@ export const DiffWorkbench: React.FC = () => {
 
       {/* Main Workspace Area */}
       {!parsedDiff ? (
-        <BeforeAfterWorkspace onAnalyze={handleCompleteAnalysis} />
+        <BeforeAfterWorkspace
+          onAnalyze={handleExecutePipeline}
+          analysisStatus={analysisStatus}
+          currentStage={currentStage}
+          analysisError={analysisError}
+          isAnalyzing={analysisStatus === 'analyzing'}
+        />
       ) : (
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Mobile & Tablet View Selector Bar (visible below lg breakpoint) */}

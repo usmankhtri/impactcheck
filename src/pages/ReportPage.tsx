@@ -172,13 +172,13 @@ export const ReportPage: React.FC = () => {
 
           <div className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#111419] shadow-2xs">
             <span className="text-[10px] uppercase font-semibold text-neutral-400">
-              Unique Findings
+              Review Findings
             </span>
             <div className="text-xl font-bold font-mono text-neutral-900 dark:text-neutral-100 mt-1">
               {summary.findingsCount}
             </div>
             <div className="text-[11px] text-neutral-500 font-mono mt-0.5">
-              {summary.signalsCount} underlying signals
+              {summary.breakdown.byPriority.HIGH} high · {summary.breakdown.byPriority.MEDIUM} med
             </div>
           </div>
 
