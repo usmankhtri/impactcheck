@@ -653,8 +653,8 @@ Documentation for test service.`],
     const envFallbackFinding = fifteenAnalysis.findings.find(f => f.category === 'configuration' && f.title.includes('DATABASE_URL'));
     assert(!!envFallbackFinding && envFallbackFinding.priority === 'MEDIUM', 'Env var without fallback is a MEDIUM finding');
 
-    // Total findings count must be substantially lower than 18 (e.g. <= 4 findings):
-    assert(fifteenAnalysis.findings.length <= 4, `Finding count dropped substantially from 18 to ${fifteenAnalysis.findings.length}`);
+    // Total findings count preserved at exactly 3 meaningful conditions:
+    assert(fifteenAnalysis.findings.length === 3, `Preserved current 3 meaningful findings, got ${fifteenAnalysis.findings.length}`);
 
     // Verify Snapshot Report export semantics:
     const report15 = buildReportObject(
@@ -680,6 +680,13 @@ Documentation for test service.`],
     assert(!md15.includes('Lines changed:'), 'Report does NOT say "Lines changed:"');
     assert(!md15.includes('Diff excerpt'), 'Report does NOT say "Diff excerpt"');
     assert(!md15.includes('**After**'), 'Report does NOT say "**After**"');
+    assert(!md15.includes('```diff'), 'Snapshot report never labels snapshot code as diff content');
+
+    // Ensure snapshot excerpts show actual detected code without + / - markers:
+    assert(!md15.includes('```text\n+'), 'Snapshot report code excerpt has no leading + diff marker');
+    assert(!md15.includes('```text\n-'), 'Snapshot report code excerpt has no leading - diff marker');
+    assert(md15.includes('ALTER TABLE users DROP COLUMN phone;'), 'Excerpts show detected code exactly as clean source code');
+    assert(md15.includes('const dbUrl = process.env.DATABASE_URL;'), 'Excerpts show detected code exactly as clean source code');
 
     console.log('\n==================================================');
     console.log(`Results: ${passed} passed, ${failed} failed`);

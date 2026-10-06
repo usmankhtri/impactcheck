@@ -83,6 +83,15 @@ export function buildReportObject(
   };
 }
 
+function cleanSnapshotExcerpt(snippet: string): string {
+  if (!snippet) return '';
+  return snippet
+    .split(/\r?\n/)
+    .map((line) => line.replace(/^[+-]\s?/, ''))
+    .join('\n')
+    .trim();
+}
+
 export function generateMarkdownReport(report: ImpactCheckReport): string {
   const { summary, files, findings, dependencies, checklist, disclaimers, projectOverview } = report;
   const isSnapshot =
@@ -163,10 +172,12 @@ export function generateMarkdownReport(report: ImpactCheckReport): string {
           md += `**Before**\n\n\`\`\`text\n${f.evidence.beforeSnippet}\n\`\`\`\n\n`;
         }
         if (f.evidence.afterSnippet) {
-          md += `**${isSnapshot ? 'Detected code' : 'After'}**\n\n\`\`\`text\n${f.evidence.afterSnippet}\n\`\`\`\n\n`;
+          const snippetText = isSnapshot ? cleanSnapshotExcerpt(f.evidence.afterSnippet) : f.evidence.afterSnippet;
+          md += `**${isSnapshot ? 'Detected code' : 'After'}**\n\n\`\`\`text\n${snippetText}\n\`\`\`\n\n`;
         }
       } else if (f.evidence.snippet) {
-        md += `**${isSnapshot ? 'Code excerpt' : 'Diff excerpt'}**\n\n\`\`\`${isSnapshot ? 'text' : 'diff'}\n${f.evidence.snippet}\n\`\`\`\n\n`;
+        const snippetText = isSnapshot ? cleanSnapshotExcerpt(f.evidence.snippet) : f.evidence.snippet;
+        md += `**${isSnapshot ? 'Code excerpt' : 'Diff excerpt'}**\n\n\`\`\`${isSnapshot ? 'text' : 'diff'}\n${snippetText}\n\`\`\`\n\n`;
       }
 
       md += `---\n\n`;
@@ -281,9 +292,13 @@ export function generatePlainTextReport(report: ImpactCheckReport): string {
       text += `Why it matters: ${f.explanation}\n`;
       if (f.suggestedAction) text += `Review action: ${f.suggestedAction}\n`;
       if (f.evidence.beforeSnippet) text += `Before: ${f.evidence.beforeSnippet}\n`;
-      if (f.evidence.afterSnippet) text += `${isSnapshot ? 'Detected code' : 'After'}: ${f.evidence.afterSnippet}\n`;
+      if (f.evidence.afterSnippet) {
+        const snippetText = isSnapshot ? cleanSnapshotExcerpt(f.evidence.afterSnippet) : f.evidence.afterSnippet;
+        text += `${isSnapshot ? 'Detected code' : 'After'}: ${snippetText}\n`;
+      }
       if (f.evidence.snippet && !f.evidence.beforeSnippet && !f.evidence.afterSnippet) {
-        text += `${isSnapshot ? 'Code excerpt' : 'Diff excerpt'}:\n${f.evidence.snippet}\n`;
+        const snippetText = isSnapshot ? cleanSnapshotExcerpt(f.evidence.snippet) : f.evidence.snippet;
+        text += `${isSnapshot ? 'Code excerpt' : 'Diff excerpt'}:\n${snippetText}\n`;
       }
       text += `--------------------------------------------------\n`;
     }
@@ -360,12 +375,12 @@ export function generateHtmlReport(report: ImpactCheckReport): string {
         ${f.evidence.afterSnippet ? `
         <div style="margin-top: 10px;">
           <div style="font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">${f.evidence.beforeSnippet ? 'After:' : 'Detected code:'}</div>
-          <pre style="background: #0f172a; color: #f8fafc; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 11px; margin: 0;"><code>${escapeHtml(f.evidence.afterSnippet)}</code></pre>
+          <pre style="background: #0f172a; color: #f8fafc; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 11px; margin: 0;"><code>${escapeHtml(isSnapshot ? cleanSnapshotExcerpt(f.evidence.afterSnippet) : f.evidence.afterSnippet)}</code></pre>
         </div>` : ''}
         ${f.evidence.snippet && !f.evidence.afterSnippet ? `
         <div style="margin-top: 10px;">
           <div style="font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">${isSnapshot ? 'Code excerpt:' : 'Diff excerpt:'}</div>
-          <pre style="background: #0f172a; color: #f8fafc; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 11px; margin: 0;"><code>${escapeHtml(f.evidence.snippet)}</code></pre>
+          <pre style="background: #0f172a; color: #f8fafc; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 11px; margin: 0;"><code>${escapeHtml(isSnapshot ? cleanSnapshotExcerpt(f.evidence.snippet) : f.evidence.snippet)}</code></pre>
         </div>` : ''}
       </div>
     `).join('');

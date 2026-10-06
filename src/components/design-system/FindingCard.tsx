@@ -35,6 +35,15 @@ export const FindingCard: React.FC<FindingCardProps> = ({
     finding.evidence.snippet
   );
 
+  const formatCodeExcerpt = (raw?: string) => {
+    if (!raw) return '';
+    if (finding.evidence.beforeSnippet) return raw;
+    return raw
+      .split('\n')
+      .map((l) => l.replace(/^[+-]\s?/, ''))
+      .join('\n');
+  };
+
   return (
     <article
       id={`finding-card-${finding.id}`}
@@ -112,7 +121,7 @@ export const FindingCard: React.FC<FindingCardProps> = ({
               <span className="font-sans uppercase text-[10px] text-neutral-400 block mb-0.5">
                 {finding.evidence.beforeSnippet ? 'After:' : 'Detected code:'}
               </span>
-              <span className="break-all">{finding.evidence.afterSnippet}</span>
+              <span className="break-all">{formatCodeExcerpt(finding.evidence.afterSnippet)}</span>
             </div>
           )}
           {finding.evidence.snippet && !finding.evidence.beforeSnippet && !finding.evidence.afterSnippet && (
@@ -121,7 +130,7 @@ export const FindingCard: React.FC<FindingCardProps> = ({
                 Code excerpt:
               </span>
               <pre className="p-2 rounded bg-neutral-100 dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 text-[11px] overflow-x-auto">
-                {finding.evidence.snippet}
+                {formatCodeExcerpt(finding.evidence.snippet)}
               </pre>
             </div>
           )}
