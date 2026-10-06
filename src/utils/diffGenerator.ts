@@ -353,6 +353,32 @@ export function createSnapshotProject(
   };
 }
 
+const STANDARD_SOURCE_ROOT_DIRS = new Set([
+  'src', 'lib', 'app', 'pages', 'components', 'test', 'tests', 'bin', 'scripts', 'public',
+  'server', 'client', 'backend', 'frontend', 'common', 'core', 'utils', 'internal', 'pkg',
+  'api', 'config', 'models', 'controllers', 'routes', 'views'
+]);
+
+function stripCommonRootDirectory(map: Map<string, string>): Map<string, string> {
+  const keys = Array.from(map.keys());
+  if (keys.length === 0) return map;
+  const firstWithSlash = keys.find((k) => k.includes('/'));
+  if (!firstWithSlash) return map;
+  const rootDirName = firstWithSlash.split('/')[0];
+  if (STANDARD_SOURCE_ROOT_DIRS.has(rootDirName.toLowerCase())) {
+    return map;
+  }
+  const candidate = rootDirName + '/';
+  if (keys.every((k) => k.startsWith(candidate))) {
+    const stripped = new Map<string, string>();
+    for (const [k, v] of map.entries()) {
+      stripped.set(k.slice(candidate.length), v);
+    }
+    return stripped;
+  }
+  return map;
+}
+
 /**
  * Compares two directory file maps and outputs a complete normalized ParsedDiff.
  */
@@ -366,6 +392,10 @@ export function compareFileMaps(
     return createSnapshotProject(afterMap, exclusions);
   }
 
+  // Normalize root prefixes if entire archives share a single top-level directory
+  const normBefore = stripCommonRootDirectory(beforeMap);
+  const normAfter = stripCommonRootDirectory(afterMap);
+
   const isExcluded = (path: string) => {
     return exclusions.some((pattern) => {
       const cleanPat = pattern.replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*');
@@ -375,19 +405,88 @@ export function compareFileMaps(
   };
 
   const allPaths = new Set<string>();
-  for (const p of beforeMap.keys()) if (!isExcluded(p)) allPaths.add(p);
-  for (const p of afterMap.keys()) if (!isExcluded(p)) allPaths.add(p);
+  for (const p of normBefore.keys()) if (!isExcluded(p)) allPaths.add(p);
+  for (const p of normAfter.keys()) if (!isExcluded(p)) allPaths.add(p);
+
+  // Identify deleted and added files for actual rename detection
+  const deletedCandidates: string[] = [];
+  const addedCandidates: string[] = [];
+  for (const path of Array.from(allPaths).sort()) {
+    const b = normBefore.get(path);
+    const a = normAfter.get(path);
+    if (b !== undefined && a === undefined) {
+      deletedCandidates.push(path);
+    } else if (b === undefined && a !== undefined) {
+      addedCandidates.push(path);
+    }
+  }
+
+  // Map of addedPath -> deletedPath for verified renames
+  const renamedPairs = new Map<string, string>();
+  const claimedDeleted = new Set<string>();
+
+  // Pass 1: Exact content match across renamed paths
+  for (const addedPath of addedCandidates) {
+    const aContent = normAfter.get(addedPath);
+    if (!aContent || aContent.trim().length === 0) continue;
+
+    for (const delPath of deletedCandidates) {
+      if (claimedDeleted.has(delPath)) continue;
+      const bContent = normBefore.get(delPath);
+      if (bContent !== undefined && bContent === aContent) {
+        renamedPairs.set(addedPath, delPath);
+        claimedDeleted.add(delPath);
+        break;
+      }
+    }
+  }
+
+  // Pass 2: Base filename matches with high similarity
+  for (const addedPath of addedCandidates) {
+    if (renamedPairs.has(addedPath)) continue;
+    const aContent = normAfter.get(addedPath);
+    if (!aContent) continue;
+    const addedBase = addedPath.split('/').pop();
+
+    for (const delPath of deletedCandidates) {
+      if (claimedDeleted.has(delPath)) continue;
+      const bContent = normBefore.get(delPath);
+      if (!bContent) continue;
+      const delBase = delPath.split('/').pop();
+
+      if (addedBase === delBase) {
+        const { additions, deletions } = computeLineDiff(bContent, aContent);
+        const avgLines = (bContent.split(/\r?\n/).length + aContent.split(/\r?\n/).length) / 2;
+        if (avgLines > 0 && additions + deletions < avgLines * 1.5) {
+          renamedPairs.set(addedPath, delPath);
+          claimedDeleted.add(delPath);
+          break;
+        }
+      }
+    }
+  }
 
   const files: DiffFile[] = [];
   let fileIndex = 0;
   let totalLinesAnalyzed = 0;
 
   for (const path of Array.from(allPaths).sort()) {
-    const beforeContent = beforeMap.get(path);
-    const afterContent = afterMap.get(path);
+    if (claimedDeleted.has(path)) {
+      // Subsumed by rename pairing under the new path
+      continue;
+    }
+
+    const isRenamed = renamedPairs.has(path);
+    const oldPath = isRenamed ? renamedPairs.get(path)! : path;
+    const newPath = path;
+
+    const beforeContent = normBefore.get(oldPath);
+    const afterContent = normAfter.get(newPath);
 
     let status: FileStatus = 'modified';
-    if (beforeContent === undefined && afterContent !== undefined) {
+    if (isRenamed) {
+      status = 'renamed';
+    } else if (beforeContent === undefined && afterContent !== undefined) {
       status = 'added';
     } else if (beforeContent !== undefined && afterContent === undefined) {
       status = 'deleted';
@@ -404,14 +503,26 @@ export function compareFileMaps(
     // If no additions and no deletions, file was identical
     if (hunks.length === 0 && status === 'modified') continue;
 
-    const isLockfile = /(package-lock\.json|pnpm-lock\.yaml|yarn\.lock|Cargo\.lock|poetry\.lock|bun\.lock)$/.test(path);
-    const fileLinesAnalyzed = (afterContent ? afterContent.split(/\r?\n/).length : 0) + (beforeContent ? beforeContent.split(/\r?\n/).length : 0);
+    const isLockfile = /(package-lock\.json|pnpm-lock\.yaml|yarn\.lock|Cargo\.lock|poetry\.lock|bun\.lock)$/.test(newPath);
+    const fileLinesAnalyzed =
+      (afterContent ? afterContent.split(/\r?\n/).length : 0) +
+      (beforeContent ? beforeContent.split(/\r?\n/).length : 0);
     totalLinesAnalyzed += fileLinesAnalyzed;
 
+    const rawHeader = isRenamed
+      ? [
+          `diff --git a/${oldPath} b/${newPath}`,
+          `rename from ${oldPath}`,
+          `rename to ${newPath}`,
+          `--- a/${oldPath}`,
+          `+++ b/${newPath}`,
+        ]
+      : [`diff --git a/${oldPath} b/${newPath}`, `--- a/${oldPath}`, `+++ b/${newPath}`];
+
     files.push({
-      id: `file-cmp-${fileIndex++}-${path.replace(/[^a-zA-Z0-9_-]/g, '_')}`,
-      oldPath: path,
-      newPath: path,
+      id: `file-cmp-${fileIndex++}-${newPath.replace(/[^a-zA-Z0-9_-]/g, '_')}`,
+      oldPath,
+      newPath,
       status,
       isBinary: false,
       isLockfile,
@@ -419,7 +530,7 @@ export function compareFileMaps(
       deletions,
       linesAnalyzed: fileLinesAnalyzed,
       hunks,
-      rawHeader: [`diff --git a/${path} b/${path}`, `--- a/${path}`, `+++ b/${path}`],
+      rawHeader,
       beforeContent,
       afterContent,
     });

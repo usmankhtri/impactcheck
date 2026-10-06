@@ -688,6 +688,269 @@ Documentation for test service.`],
     assert(md15.includes('ALTER TABLE users DROP COLUMN phone;'), 'Excerpts show detected code exactly as clean source code');
     assert(md15.includes('const dbUrl = process.env.DATABASE_URL;'), 'Excerpts show detected code exactly as clean source code');
 
+    // Scenario 19: Single-file Before/After using the SAME logical file path
+    const sampleSingleBefore = `import express from 'express';
+import { requireAuth, requireAdmin } from '../middleware';
+const router = express.Router();
+
+router.get('/:id', requireAuth, (req, res) => res.json({ id: req.params.id }));
+router.delete('/:id', requireAuth, requireAdmin, (req, res) => res.json({ ok: true }));
+export default router;`;
+
+    const sampleSingleAfter = `import express from 'express';
+import { requireAuth } from '../middleware';
+const router = express.Router();
+
+router.get('/:id', requireAuth, (req, res) => res.json({ id: req.params.id }));
+router.delete('/:id', requireAuth, (req, res) => res.json({ ok: true }));
+export default router;`;
+
+    const singlePathResult = await executeAnalysisPipeline({
+      type: 'before-after-text',
+      beforePath: 'src/server/routes/users.ts',
+      afterPath: 'src/server/routes/users.ts',
+      beforeContent: sampleSingleBefore,
+      afterContent: sampleSingleAfter,
+    });
+
+    assert(singlePathResult.parsedDiff.files.length === 1, 'Single-file comparison produced 1 file');
+    const singleFile = singlePathResult.parsedDiff.files[0];
+    assert(singleFile.status === 'modified', 'Same logical path classified as "modified", NOT renamed or added');
+    assert(singleFile.oldPath === 'src/server/routes/users.ts', 'Old path is preserved exactly');
+    assert(singleFile.newPath === 'src/server/routes/users.ts', 'New path is preserved exactly');
+    assert(singleFile.additions > 0 && singleFile.deletions > 0, 'Real line additions and deletions calculated');
+    assert(!singlePathResult.findings.some(f => f.category === 'other' && f.title.includes('renamed')), 'No false rename finding on same-path file');
+
+    const singleAuthFinding = singlePathResult.findings.find(f => f.category === 'authorization');
+    assert(!!singleAuthFinding, 'Found authorization finding for route middleware change');
+    assert(singleAuthFinding?.priority === 'HIGH', 'Severity is HIGH for weakened authorization');
+    assert(singleAuthFinding?.confidence === 'HIGH', 'Confidence is separate and HIGH');
+    assert(Boolean(singleAuthFinding?.explanation.includes('authorization middleware was removed')), 'Explains WHY it matters');
+    assert(singleAuthFinding?.changeType === 'Authorization requirement changed', 'Explains WHAT changed');
+
+    // Scenario 20: 20-File Before/After Projects
+    const before20 = new Map<string, string>([
+      ['.env.example', 'PORT=3000\nDATABASE_URL=postgres://localhost:5432/db'],
+      ['vite.config.ts', 'export default { server: { port: 3000 } };'],
+      ['README.md', '# Core System\nProduction service.'],
+      ['package.json', JSON.stringify({
+        dependencies: {
+          lodash: '^4.17.21',
+          zod: '^2.0.0',
+        },
+      }, null, 2)],
+      ['tests/users.test.ts', 'test("users", () => {});'],
+      ['tests/legacy.test.ts', 'test("legacy tests", () => { expect(true).toBe(true); });'], // Deleted in after20
+      ['src/frontend/api.ts', 'export const fetchUsers = () => fetch("/api/users");'],
+      ['src/services/userService.ts', 'const db = process.env.DATABASE_URL || "postgres://localhost/dev";'],
+      ['src/config/env.ts', 'export const port = process.env.PORT;'],
+      ['src/server/routes/users.ts', `import { requireAuth, requireAdmin } from "../middleware";
+router.get("/:id", requireAuth, get);
+router.delete("/:id", requireAuth, requireAdmin, del);`],
+      ['src/server/routes/orders.ts', `router.delete("/api/orders/old", cancelOldOrders);`],
+      ['src/server/middleware/requireAdmin.ts', 'export function requireAdmin() {}'],
+      ['src/server/middleware/requireAuth.ts', 'export function requireAuth() {}'],
+      ['src/legacy/auth.ts', 'export function legacyTokenVerify(token: string) { return Boolean(token); }'], // Renamed in after20
+      ['src/utils/deprecatedHelper.ts', 'export const deprecatedUtil = () => true;'], // Deleted in after20
+      ['src/utils/oldHelper.ts', 'export const oldHelper = () => 1;'], // Deleted in after20
+      ['src/types/user.ts', 'export interface User { id: string; }'],
+      ['src/constants/roles.ts', 'export const ROLES = ["ADMIN", "USER"];'],
+      ['src/db/schema.ts', 'export interface Schema { version: 1; }'],
+      ['src/index.ts', 'import express from "express"; export const app = express();'],
+    ]);
+
+    const after20 = new Map<string, string>([
+      ['.env.example', 'PORT=3000\nDATABASE_URL=postgres://localhost:5432/db\nCACHE_URL=redis://localhost:6379'],
+      ['vite.config.ts', 'export default { server: { port: 3000 } };'], // Unchanged
+      ['README.md', '# Core System\nProduction service.'], // Unchanged
+      ['package.json', JSON.stringify({
+        dependencies: {
+          '@tanstack/react-query': '^5.0.0', // Added
+          zod: '^3.0.0', // Major bump
+          // lodash removed
+        },
+      }, null, 2)],
+      ['tests/users.test.ts', 'test("users", () => { expect(true).toBe(true); });'],
+      ['tests/orders.test.ts', 'test("orders api", () => { expect(true).toBe(true); });'], // Added test file
+      ['db/migrations/004_remove_legacy_phone.sql', 'ALTER TABLE users DROP COLUMN phone;\nDROP TABLE legacy_sessions;'], // Added migration with DROP COLUMN & DROP TABLE
+      ['src/frontend/api.ts', 'export const fetchUsers = () => fetch("/api/v2/users");'],
+      ['src/services/userService.ts', 'const db = process.env.DATABASE_URL;'], // Fallback removed!
+      ['src/config/env.ts', 'export const port = process.env.PORT || "3000";'], // Fallback added!
+      ['src/server/routes/users.ts', `import { requireAuth } from "../middleware";
+router.get("/:id", requireAuth, get);
+router.delete("/:id", requireAuth, del);`], // requireAdmin removed!
+      ['src/server/routes/orders.ts', `router.post("/api/orders", createOrder);`], // Route added, old removed
+      ['src/server/middleware/requireAdmin.ts', 'export function requireAdmin() {}'], // Unchanged
+      ['src/server/middleware/requireAuth.ts', 'export function requireAuth() {}'], // Unchanged
+      ['src/security/auth.ts', 'export function legacyTokenVerify(token: string) { return Boolean(token); }'], // Renamed from src/legacy/auth.ts!
+      ['src/services/notificationService.ts', 'export const sendNotice = () => console.log("notice");'], // Added service
+      ['src/types/user.ts', 'export interface User { id: string; email: string; }'],
+      ['src/constants/roles.ts', 'export const ROLES = ["ADMIN", "USER"];'], // Unchanged
+      ['src/db/schema.ts', 'export interface Schema { version: 1; }'], // Unchanged
+      ['src/index.ts', 'import express from "express"; export const app = express();'], // Unchanged
+    ]);
+
+    assert(before20.size === 20, `before20 project has exactly 20 files, got ${before20.size}`);
+    assert(after20.size === 20, `after20 project has exactly 20 files, got ${after20.size}`);
+
+    const compare20Result = await executeAnalysisPipeline({
+      type: 'before-after-projects',
+      beforeName: 'Release v1.0',
+      afterName: 'Release v2.0',
+      beforeFiles: before20,
+      afterFiles: after20,
+    });
+
+    const parsed20 = compare20Result.parsedDiff;
+
+    // 1. Unchanged files must NOT be in changed files
+    assert(!parsed20.files.some(f => f.newPath === 'vite.config.ts'), 'Identical vite.config.ts is omitted from diff');
+    assert(!parsed20.files.some(f => f.newPath === 'README.md'), 'Identical README.md is omitted from diff');
+    assert(!parsed20.files.some(f => f.newPath === 'src/constants/roles.ts'), 'Identical roles.ts is omitted from diff');
+    assert(!parsed20.files.some(f => f.newPath === 'src/server/middleware/requireAdmin.ts'), 'Identical requireAdmin.ts is omitted from diff');
+    assert(!parsed20.files.some(f => f.newPath === 'src/db/schema.ts'), 'Identical schema.ts is omitted from diff');
+    assert(!parsed20.files.some(f => f.newPath === 'src/index.ts'), 'Identical index.ts is omitted from diff');
+
+    // 2. Modified files correctly detected as modified
+    const usersRouteFile = parsed20.files.find(f => f.newPath === 'src/server/routes/users.ts');
+    assert(!!usersRouteFile && usersRouteFile?.status === 'modified', 'users.ts detected as modified');
+    assert(usersRouteFile?.oldPath === 'src/server/routes/users.ts', 'users.ts retains same logical old and new path');
+
+    const pkgFile20 = parsed20.files.find(f => f.newPath === 'package.json');
+    assert(!!pkgFile20 && pkgFile20.status === 'modified', 'package.json detected as modified');
+
+    // 3. Added files correctly detected
+    const addedMig = parsed20.files.find(f => f.newPath === 'db/migrations/004_remove_legacy_phone.sql');
+    assert(!!addedMig && addedMig.status === 'added', 'New migration detected as added');
+
+    const addedNotice = parsed20.files.find(f => f.newPath === 'src/services/notificationService.ts');
+    assert(!!addedNotice && addedNotice.status === 'added', 'notificationService.ts detected as added');
+
+    const addedOrderTest = parsed20.files.find(f => f.newPath === 'tests/orders.test.ts');
+    assert(!!addedOrderTest && addedOrderTest.status === 'added', 'tests/orders.test.ts detected as added');
+
+    // 4. Removed file correctly detected
+    const delHelper = parsed20.files.find(f => f.oldPath === 'src/utils/deprecatedHelper.ts');
+    assert(!!delHelper && delHelper.status === 'deleted', 'deprecatedHelper.ts detected as deleted');
+
+    const delTest = parsed20.files.find(f => f.oldPath === 'tests/legacy.test.ts');
+    assert(!!delTest && delTest.status === 'deleted', 'tests/legacy.test.ts detected as deleted');
+
+    // 5. Renamed file detected ONLY when actually renamed
+    const renamedAuth = parsed20.files.find(f => f.newPath === 'src/security/auth.ts');
+    assert(!!renamedAuth && renamedAuth?.status === 'renamed', 'auth.ts correctly detected as renamed');
+    assert(renamedAuth?.oldPath === 'src/legacy/auth.ts', 'Rename tracks oldPath from src/legacy/auth.ts');
+
+    // 6. Dependencies added, removed, updated (major bump)
+    const depAdded = compare20Result.dependencies.find(d => d.name === '@tanstack/react-query');
+    assert(!!depAdded && depAdded.changeType === 'added', 'Detected added dependency @tanstack/react-query');
+
+    const depRemoved = compare20Result.dependencies.find(d => d.name === 'lodash');
+    assert(!!depRemoved && depRemoved.changeType === 'removed', 'Detected removed dependency lodash');
+
+    const depUpdated = compare20Result.dependencies.find(d => d.name === 'zod');
+    assert(!!depUpdated && depUpdated.changeType === 'updated' && depUpdated.isMajorBump, 'Detected major bump on zod');
+
+    // 7. Route added, removed, changed
+    assert(compare20Result.findings.some(f => f.title.includes('POST /api/orders')), 'Detected added route POST /api/orders');
+    assert(compare20Result.findings.some(f => f.title.includes('DELETE /api/orders/old')), 'Detected removed route DELETE /api/orders/old');
+
+    // 8. Middleware / auth changes: requireAdmin removed from DELETE /:id
+    const routeAuthzChange = compare20Result.findings.find(f => f.category === 'authorization' && f.title.includes('DELETE /:id'));
+    assert(!!routeAuthzChange && routeAuthzChange?.priority === 'HIGH', 'weakened DELETE /:id route is HIGH priority finding');
+    assert(routeAuthzChange?.confidence === 'HIGH', 'Authorization finding confidence is separate and HIGH');
+    assert(Boolean(routeAuthzChange?.explanation && routeAuthzChange?.changeType), 'Authorization finding explains WHAT changed and WHY it matters');
+
+    // 9. Environment changes
+    const envNoFallback = compare20Result.findings.find(f => f.title.includes('DATABASE_URL') && f.priority === 'MEDIUM');
+    assert(!!envNoFallback, 'DATABASE_URL without fallback flagged as MEDIUM');
+
+    const envWithFallback = compare20Result.findings.find(f => f.title.includes('PORT') && f.priority === 'LOW');
+    assert(!!envWithFallback, 'PORT with inline fallback flagged as LOW');
+
+    // 10. Database changes
+    const dropColFinding20 = compare20Result.findings.find(f => f.category === 'database' && f.title.includes('DROP COLUMN'));
+    assert(!!dropColFinding20 && dropColFinding20.priority === 'HIGH', 'DROP COLUMN is HIGH severity finding');
+
+    const dropTableFinding20 = compare20Result.findings.find(f => f.category === 'database' && f.title.includes('DROP TABLE'));
+    assert(!!dropTableFinding20 && dropTableFinding20.priority === 'HIGH', 'DROP TABLE is HIGH severity finding');
+
+    // 11. Test changes
+    const testRemovedFinding = compare20Result.findings.find(f => f.category === 'tests' && f.title.includes('legacy.test.ts'));
+    assert(!!testRemovedFinding, 'Test suite removal detected as a test finding');
+
+    // 12. Meaningful downstream impact
+    assert(compare20Result.breakingWatchlist.length > 0, 'Breaking watchlist populated with high-impact breaking changes');
+    assert(compare20Result.breakingWatchlist.some(w => w.title.includes('DROP COLUMN')), 'Database breaking impact tracked');
+    assert(compare20Result.breakingWatchlist.some(w => w.title.includes('DELETE /:id')), 'Weakened route authorization tracked in breaking watchlist');
+    assert(compare20Result.changeMap.edges.length > 0, 'Change map captures downstream test and import edges');
+
+    // 13. Real additions and deletions
+    assert(parsed20.totalAdditions > 0 && parsed20.totalDeletions > 0, 'Real line additions and deletions computed');
+    assert((parsed20.totalLinesAnalyzed || 0) > 0, 'Real total lines analyzed computed');
+
+    // 14. Correlation: related signals merged, not noisy duplicate findings
+    const usersRouteFindings = compare20Result.findings.filter(f => f.affectedFile === 'src/server/routes/users.ts');
+    assert(usersRouteFindings.length === 1, `Route auth change correlated into exactly 1 finding in users.ts, got ${usersRouteFindings.length}`);
+
+    // 15. Comparison markdown report contains diff excerpts
+    const compReport = buildReportObject(
+      parsed20,
+      compare20Result.findings,
+      compare20Result.summary,
+      compare20Result.dependencies,
+      compare20Result.checklist
+    );
+    const compMd = generateMarkdownReport(compReport);
+    assert(compMd.includes('Changeset Comparison'), 'Report indicates Changeset Comparison');
+    assert(compMd.includes('Changed Files'), 'Report uses Changed Files');
+    assert(compMd.includes('Lines Changed'), 'Report uses Lines Changed');
+    assert(compMd.includes('Dependency Changes'), 'Report uses Dependency Changes');
+    assert(compMd.includes('Diff excerpt'), 'Markdown contains Diff excerpt in comparison mode');
+    assert(!compMd.includes('Code excerpt'), 'Comparison mode does not use snapshot Code excerpt label');
+
+    // Scenario 21: Real 20-File Before/After ZIPs Ingestion & Analysis
+    const JSZip = (await import('jszip')).default;
+    const { extractZipArchive } = await import('../utils/zipParser');
+
+    const zipBefore = new JSZip();
+    for (const [p, c] of before20.entries()) {
+      zipBefore.file(p, c);
+    }
+    const beforeZipBuffer = await zipBefore.generateAsync({ type: 'uint8array' });
+    const beforeZipFile = new File([beforeZipBuffer as any], 'project-v1.zip', { type: 'application/zip' });
+
+    const zipAfter = new JSZip();
+    for (const [p, c] of after20.entries()) {
+      zipAfter.file(p, c);
+    }
+    const afterZipBuffer = await zipAfter.generateAsync({ type: 'uint8array' });
+    const afterZipFile = new File([afterZipBuffer as any], 'project-v2.zip', { type: 'application/zip' });
+
+    const extractedBeforeZip = await extractZipArchive(beforeZipFile);
+    const extractedAfterZip = await extractZipArchive(afterZipFile);
+
+    assert(extractedBeforeZip.totalFiles === 20, `Before ZIP extracted all 20 files, got ${extractedBeforeZip.totalFiles}`);
+    assert(extractedAfterZip.totalFiles === 20, `After ZIP extracted all 20 files, got ${extractedAfterZip.totalFiles}`);
+
+    const zipPipelineResult = await executeAnalysisPipeline({
+      type: 'before-after-projects',
+      beforeName: 'Project v1.0.0.zip',
+      afterName: 'Project v2.0.0.zip',
+      beforeFiles: extractedBeforeZip.files,
+      afterFiles: extractedAfterZip.files,
+    });
+
+    assert(zipPipelineResult.parsedDiff.analysisMode === 'comparison', 'ZIP comparison mode is "comparison"');
+    assert(zipPipelineResult.parsedDiff.hasBaseline === true, 'ZIP comparison has baseline');
+    assert(!zipPipelineResult.parsedDiff.files.some(f => f.newPath === 'vite.config.ts'), 'Unchanged file not treated as changed in ZIP comparison');
+    assert(zipPipelineResult.parsedDiff.files.some(f => f.newPath === 'src/server/routes/users.ts' && f.status === 'modified'), 'Modified file correctly detected in ZIP comparison');
+    assert(zipPipelineResult.parsedDiff.files.some(f => f.newPath === 'db/migrations/004_remove_legacy_phone.sql' && f.status === 'added'), 'Added file correctly detected in ZIP comparison');
+    assert(zipPipelineResult.parsedDiff.files.some(f => f.oldPath === 'tests/legacy.test.ts' && f.status === 'deleted'), 'Removed test file correctly detected in ZIP comparison');
+    assert(zipPipelineResult.parsedDiff.files.some(f => f.newPath === 'src/security/auth.ts' && f.status === 'renamed'), 'Renamed file correctly detected in ZIP comparison');
+    assert(zipPipelineResult.findings.length > 0, 'ZIP comparison produces review findings');
+    assert(zipPipelineResult.findings.every(f => f.priority && f.confidence), 'All findings keep severity and confidence separate');
+
     console.log('\n==================================================');
     console.log(`Results: ${passed} passed, ${failed} failed`);
     console.log('==================================================');

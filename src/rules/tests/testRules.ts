@@ -43,8 +43,30 @@ export const testRule: Rule = {
     // In standalone snapshot mode, diff comparison heuristics for test parity do not apply
     if (mode === 'snapshot') return findings;
 
-    // Skip test files themselves
-    if (isTestFilePath(file.newPath)) return findings;
+    // If this is a test file itself
+    if (isTestFilePath(file.newPath) || isTestFilePath(file.oldPath)) {
+      if (file.status === 'deleted') {
+        findings.push({
+          id: `test-file-deleted-${file.id}`,
+          ruleId: 'rule-test-impact',
+          title: `Test suite or test file removed: ${file.oldPath || file.newPath}`,
+          category: 'tests',
+          priority: 'REVIEW',
+          confidence: 'HIGH',
+          changeType: 'Test suite deleted',
+          affectedFile: file.oldPath || file.newPath,
+          changeSignature: `test:deleted:${file.oldPath || file.newPath}`,
+          evidence: {
+            filePath: file.oldPath || file.newPath,
+            changeType: 'deletion',
+            snippet: `${file.deletions} lines deleted in test file`,
+          },
+          explanation: `Test file "${file.oldPath || file.newPath}" was removed in this changeset. Deleting test coverage can mask regressions in related components.`,
+          suggestedAction: 'Confirm whether tests were intentionally retired, consolidated into another test file, or deleted by mistake.',
+        });
+      }
+      return findings;
+    }
 
     // Skip non-code assets
     if (NON_CODE_EXTENSIONS.some((ext) => ext.test(file.newPath))) return findings;

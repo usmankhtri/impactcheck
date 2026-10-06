@@ -1,6 +1,7 @@
 import {
   ParsedDiff,
   DiffFile,
+  FileStatus,
   AnalysisMode,
   AnalysisContext,
   AnalysisWarning,
@@ -147,10 +148,30 @@ export async function executeAnalysisPipeline(
     }
 
     const { hunks, additions, deletions } = computeLineDiff(beforeContent, afterContent);
-    const status = beforePath === afterPath ? 'modified' : 'renamed';
+    let status: FileStatus = 'modified';
+    if (!beforeContent && afterContent) {
+      status = 'added';
+    } else if (beforeContent && !afterContent) {
+      status = 'deleted';
+    } else if (beforePath !== afterPath) {
+      status = 'renamed';
+    } else {
+      status = 'modified';
+    }
+
     const linesAnalyzed =
       (beforeContent ? beforeContent.split(/\r?\n/).length : 0) +
       (afterContent ? afterContent.split(/\r?\n/).length : 0);
+
+    const rawHeader = status === 'renamed'
+      ? [
+          `diff --git a/${beforePath} b/${afterPath}`,
+          `rename from ${beforePath}`,
+          `rename to ${afterPath}`,
+          `--- a/${beforePath}`,
+          `+++ b/${afterPath}`,
+        ]
+      : [`diff --git a/${beforePath} b/${afterPath}`, `--- a/${beforePath}`, `+++ b/${afterPath}`];
 
     const diffFile: DiffFile = {
       id: `file-cmp-${Date.now()}`,
@@ -163,7 +184,7 @@ export async function executeAnalysisPipeline(
       deletions,
       linesAnalyzed,
       hunks,
-      rawHeader: [`diff --git a/${beforePath} b/${afterPath}`, `--- a/${beforePath}`, `+++ b/${afterPath}`],
+      rawHeader,
       beforeContent,
       afterContent,
     };

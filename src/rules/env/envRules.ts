@@ -136,7 +136,7 @@ export const envRule: Rule = {
 
     // In source files, look for references to process.env.*
     const addedEnvVars = new Map<string, EnvVarContext>();
-    const removedEnvVars = new Set<string>();
+    const removedEnvVars = new Map<string, EnvVarContext>();
 
     for (const hunk of file.hunks) {
       for (const line of hunk.lines) {
@@ -173,14 +173,41 @@ export const envRule: Rule = {
           ENV_USAGE_REGEX.lastIndex = 0;
           let match;
           while ((match = ENV_USAGE_REGEX.exec(line.content)) !== null) {
-            removedEnvVars.add(match[1]);
+            const varName = match[1];
+            if (!['NODE_ENV'].includes(varName) && !removedEnvVars.has(varName)) {
+              removedEnvVars.set(varName, parseEnvContext(line.content, varName, line.oldLineNumber || hunk.oldStart, false));
+            }
+          }
+
+          PY_ENV_USAGE_REGEX.lastIndex = 0;
+          let pyMatch;
+          while ((pyMatch = PY_ENV_USAGE_REGEX.exec(line.content)) !== null) {
+            const varName = pyMatch[1];
+            const fallback = pyMatch[2]?.trim();
+            if (!removedEnvVars.has(varName)) {
+              removedEnvVars.set(varName, {
+                varName,
+                hasFallback: !!fallback,
+                fallbackValue: fallback,
+                isConditionalCheck: false,
+                line: line.oldLineNumber || hunk.oldStart,
+                snippet: `- ${line.content.trim()}`,
+              });
+            }
           }
         }
       }
     }
 
     for (const [varName, context] of addedEnvVars.entries()) {
-      if (!isSnapshot && removedEnvVars.has(varName)) continue; // Simply shifted or edited
+      const prevContext = removedEnvVars.get(varName);
+      if (!isSnapshot && prevContext) {
+        // If the variable was in both deleted and added lines, check if fallback semantics changed
+        if (prevContext.hasFallback === context.hasFallback && prevContext.fallbackValue === context.fallbackValue) {
+          // Truly unchanged semantics, simply shifted or edited
+          continue;
+        }
+      }
 
       if (context.hasFallback) {
         // Case A: Variable with fallback - NEVER label required

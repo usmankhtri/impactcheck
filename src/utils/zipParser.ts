@@ -26,6 +26,12 @@ const IGNORED_PATH_PATTERNS = [
   /\.git\//,
 ];
 
+const STANDARD_SOURCE_ROOT_DIRS = new Set([
+  'src', 'lib', 'app', 'pages', 'components', 'test', 'tests', 'bin', 'scripts', 'public',
+  'server', 'client', 'backend', 'frontend', 'common', 'core', 'utils', 'internal', 'pkg',
+  'api', 'config', 'models', 'controllers', 'routes', 'views'
+]);
+
 function isBinaryPath(path: string): boolean {
   const parts = path.split('.');
   if (parts.length < 2) return false;
@@ -86,12 +92,15 @@ export async function extractZipArchive(
   let commonPrefix = '';
   const firstPath = entries.find((e) => !loaded.files[e].dir);
   if (firstPath && firstPath.includes('/')) {
-    const candidatePrefix = firstPath.split('/')[0] + '/';
-    const allShare = entries.every(
-      (e) => e.startsWith(candidatePrefix) || e === candidatePrefix.slice(0, -1)
-    );
-    if (allShare) {
-      commonPrefix = candidatePrefix;
+    const rootCandidate = firstPath.split('/')[0];
+    if (!STANDARD_SOURCE_ROOT_DIRS.has(rootCandidate.toLowerCase())) {
+      const candidatePrefix = rootCandidate + '/';
+      const allShare = entries.every(
+        (e) => e.startsWith(candidatePrefix) || e === candidatePrefix.slice(0, -1)
+      );
+      if (allShare) {
+        commonPrefix = candidatePrefix;
+      }
     }
   }
 
